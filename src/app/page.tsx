@@ -13,12 +13,22 @@ interface DashboardData {
   ultimas_reservas: any[];
 }
 
+interface Habitacion {
+  id: number;
+  numero: string;
+  tipo: string;
+  precio_hora: number;
+  estado: string;
+}
+
 export default function Home() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [habitaciones, setHabitaciones] = useState<Habitacion[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchDashboard();
+    fetchHabitaciones();
   }, []);
 
   const fetchDashboard = async () => {
@@ -35,6 +45,48 @@ export default function Home() {
     }
   };
 
+  const fetchHabitaciones = async () => {
+    try {
+      const response = await fetch('/api/habitaciones');
+      const result = await response.json();
+      if (result.success) {
+        setHabitaciones(result.data);
+      }
+    } catch (error) {
+      console.error('Error cargando habitaciones:', error);
+    }
+  };
+
+  const getEstadoColor = (estado: string) => {
+    switch (estado) {
+      case 'Disponible':
+        return 'bg-green-500';
+      case 'Ocupada':
+        return 'bg-red-500';
+      case 'Mantenimiento':
+        return 'bg-yellow-500';
+      case 'Limpieza':
+        return 'bg-blue-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  const getEstadoEmoji = (estado: string) => {
+    switch (estado) {
+      case 'Disponible':
+        return '✅';
+      case 'Ocupada':
+        return '🔴';
+      case 'Mantenimiento':
+        return '🔧';
+      case 'Limpieza':
+        return '🧹';
+      default:
+        return '⚪';
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -47,20 +99,20 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <header className="bg-gray-800/50 backdrop-blur-sm border-b border-gray-700 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-900">
-              🏨 Sistema de Gestión de Motel
+            <h1 className="text-2xl font-bold text-white">
+              🏨 Lobby - Motel
             </h1>
             <div className="flex gap-3">
               <Link
                 href="/habitaciones"
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
               >
-                Habitaciones
+                Gestión
               </Link>
               <Link
                 href="/reservas"
@@ -74,186 +126,96 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Disponibles</p>
-                <p className="text-3xl font-bold text-green-600">
-                  {data?.habitaciones_disponibles || 0}
-                </p>
-              </div>
-              <div className="text-4xl">🟢</div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Stats Bar */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-green-600/20 backdrop-blur-sm border border-green-500/30 rounded-lg p-4">
+            <div className="text-green-400 text-sm font-medium">Disponibles</div>
+            <div className="text-3xl font-bold text-white mt-1">
+              {data?.habitaciones_disponibles || 0}
             </div>
           </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Ocupadas</p>
-                <p className="text-3xl font-bold text-red-600">
-                  {data?.habitaciones_ocupadas || 0}
-                </p>
-              </div>
-              <div className="text-4xl">🔴</div>
+          <div className="bg-red-600/20 backdrop-blur-sm border border-red-500/30 rounded-lg p-4">
+            <div className="text-red-400 text-sm font-medium">Ocupadas</div>
+            <div className="text-3xl font-bold text-white mt-1">
+              {data?.habitaciones_ocupadas || 0}
             </div>
           </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Reservas Activas</p>
-                <p className="text-3xl font-bold text-blue-600">
-                  {data?.reservas_activas || 0}
-                </p>
-              </div>
-              <div className="text-4xl">📋</div>
+          <div className="bg-blue-600/20 backdrop-blur-sm border border-blue-500/30 rounded-lg p-4">
+            <div className="text-blue-400 text-sm font-medium">Reservas</div>
+            <div className="text-3xl font-bold text-white mt-1">
+              {data?.reservas_activas || 0}
             </div>
           </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Ingresos Hoy</p>
-                <p className="text-3xl font-bold text-purple-600">
-                  ${data?.ingresos_hoy.toFixed(2) || '0.00'}
-                </p>
-              </div>
-              <div className="text-4xl">💰</div>
+          <div className="bg-purple-600/20 backdrop-blur-sm border border-purple-500/30 rounded-lg p-4">
+            <div className="text-purple-400 text-sm font-medium">Ingresos Hoy</div>
+            <div className="text-2xl font-bold text-white mt-1">
+              ${data?.ingresos_hoy.toFixed(2) || '0.00'}
             </div>
           </div>
         </div>
 
-        {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Habitaciones por Estado */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
-              Estado de Habitaciones
-            </h2>
-            <div className="space-y-3">
-              {data?.habitaciones_por_estado.map((item) => (
-                <div key={item.estado} className="flex justify-between items-center">
-                  <span className="text-gray-700">{item.estado}</span>
-                  <span className="px-3 py-1 bg-gray-100 rounded-full font-semibold">
-                    {item.cantidad}
-                  </span>
-                </div>
+        {/* Habitaciones Grid con Scroll */}
+        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg p-6">
+          <h2 className="text-xl font-bold text-white mb-4">Habitaciones</h2>
+          <div className="max-h-[calc(100vh-300px)] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {habitaciones.map((habitacion) => (
+                <Link
+                  key={habitacion.id}
+                  href={habitacion.estado === 'Disponible' ? `/reservas/nueva?habitacion=${habitacion.id}` : '#'}
+                  className={`
+                    aspect-square rounded-lg p-4 flex flex-col items-center justify-center
+                    transition-all duration-200 border-2
+                    ${habitacion.estado === 'Disponible'
+                      ? 'bg-green-600/20 border-green-500/50 hover:bg-green-600/30 hover:scale-105 cursor-pointer'
+                      : habitacion.estado === 'Ocupada'
+                      ? 'bg-red-600/20 border-red-500/50 cursor-not-allowed'
+                      : habitacion.estado === 'Limpieza'
+                      ? 'bg-blue-600/20 border-blue-500/50 cursor-not-allowed'
+                      : 'bg-yellow-600/20 border-yellow-500/50 cursor-not-allowed'
+                    }
+                  `}
+                >
+                  <div className="text-4xl mb-2">{getEstadoEmoji(habitacion.estado)}</div>
+                  <div className="text-2xl font-bold text-white">{habitacion.numero}</div>
+                  <div className="text-xs text-gray-300 mt-1">{habitacion.tipo}</div>
+                  <div className="text-sm font-semibold text-white mt-2">
+                    ${habitacion.precio_hora}/hr
+                  </div>
+                  <div className={`
+                    text-xs px-2 py-1 rounded-full mt-2
+                    ${habitacion.estado === 'Disponible' ? 'bg-green-500/30 text-green-200' : ''}
+                    ${habitacion.estado === 'Ocupada' ? 'bg-red-500/30 text-red-200' : ''}
+                    ${habitacion.estado === 'Limpieza' ? 'bg-blue-500/30 text-blue-200' : ''}
+                    ${habitacion.estado === 'Mantenimiento' ? 'bg-yellow-500/30 text-yellow-200' : ''}
+                  `}>
+                    {habitacion.estado}
+                  </div>
+                </Link>
               ))}
             </div>
           </div>
-
-          {/* Ingresos del Mes */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
-              Resumen Financiero
-            </h2>
-            <div className="space-y-4">
-              <div className="border-b pb-3">
-                <p className="text-sm text-gray-600">Ingresos de Hoy</p>
-                <p className="text-2xl font-bold text-green-600">
-                  ${data?.ingresos_hoy.toFixed(2) || '0.00'}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Ingresos del Mes</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  ${data?.ingresos_mes.toFixed(2) || '0.00'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Últimas Reservas */}
-        <div className="bg-white rounded-lg shadow p-6 mt-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">
-            Últimas Reservas
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    ID
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Habitación
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Cliente
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Fecha Entrada
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Estado
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {data?.ultimas_reservas.map((reserva) => (
-                  <tr key={reserva.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      #{reserva.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {reserva.habitacion_numero}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {reserva.cliente_nombre}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(reserva.fecha_entrada).toLocaleString('es-ES')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        reserva.estado === 'Activa'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {reserva.estado}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-          <Link
-            href="/reservas/nueva"
-            className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-6 hover:from-blue-600 hover:to-blue-700 transition shadow-lg"
-          >
-            <div className="text-4xl mb-2">➕</div>
-            <h3 className="text-xl font-bold">Nueva Reserva</h3>
-            <p className="text-blue-100 mt-1">Realizar check-in</p>
-          </Link>
-
-          <Link
-            href="/habitaciones"
-            className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-6 hover:from-green-600 hover:to-green-700 transition shadow-lg"
-          >
-            <div className="text-4xl mb-2">🏠</div>
-            <h3 className="text-xl font-bold">Ver Habitaciones</h3>
-            <p className="text-green-100 mt-1">Gestionar habitaciones</p>
-          </Link>
-
-          <Link
-            href="/reportes"
-            className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg p-6 hover:from-purple-600 hover:to-purple-700 transition shadow-lg"
-          >
-            <div className="text-4xl mb-2">📊</div>
-            <h3 className="text-xl font-bold">Reportes</h3>
-            <p className="text-purple-100 mt-1">Ver estadísticas</p>
-          </Link>
         </div>
       </main>
+
+      {/* Custom Scrollbar Styles */}
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(31, 41, 55, 0.5);
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(75, 85, 99, 0.8);
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(107, 114, 128, 0.9);
+        }
+      `}</style>
     </div>
   );
 }
