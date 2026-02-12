@@ -46,15 +46,20 @@ export async function closeConnection() {
 }
 
 // Función para ejecutar queries
-export async function query<T = any>(queryText: string, params?: any[]): Promise<T[]> {
+export async function query<T = any>(
+  queryText: string,
+  params?: Array<{ name: string; type: string; value: any }>
+): Promise<T[]> {
   try {
     const connection = await getConnection();
     const request = connection.request();
     
     // Agregar parámetros si existen
     if (params) {
-      params.forEach((param, index) => {
-        request.input(`param${index}`, param);
+      params.forEach((param) => {
+        // Usar el tipo de SQL correcto
+        const sqlType = (sql as any)[param.type];
+        request.input(param.name, sqlType, param.value);
       });
     }
     
