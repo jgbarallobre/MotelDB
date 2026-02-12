@@ -28,7 +28,7 @@ export default function LoginPage() {
       if (result.success) {
         // Guardar sesión en localStorage
         localStorage.setItem('user', JSON.stringify(result.data));
-        router.push('/');
+        router.push('/dashboard');
       } else {
         setError(result.error || 'Credenciales incorrectas');
       }
