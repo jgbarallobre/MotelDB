@@ -55,13 +55,39 @@ npm install
 Crea un archivo `.env.local` en la raíz del proyecto:
 
 ```env
+DB_SERVER=localhost
 DB_USER=sa
 DB_PASSWORD=TuPassword123
-DB_SERVER=localhost
 DB_NAME=MotelDB
 ```
 
 **Importante:** Cambia estos valores según tu configuración de SQL Server.
+
+#### Ejemplos de configuración:
+
+**SQL Server Express (instancia nombrada):**
+```env
+DB_SERVER=DESKTOP\\EXPRESS
+DB_USER=sa
+DB_PASSWORD=tu_password
+DB_NAME=MotelDB
+```
+
+**SQL Server Local (instancia por defecto):**
+```env
+DB_SERVER=localhost
+DB_USER=sa
+DB_PASSWORD=tu_password
+DB_NAME=MotelDB
+```
+
+**Azure SQL Database:**
+```env
+DB_SERVER=tu-servidor.database.windows.net
+DB_USER=tu_usuario
+DB_PASSWORD=tu_password
+DB_NAME=MotelDB
+```
 
 ### 5. Ejecutar el proyecto
 
