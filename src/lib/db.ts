@@ -3,12 +3,13 @@ import sql from 'mssql';
 // Configuración de la conexión a SQL Server
 const config: sql.config = {
   user: process.env.DB_USER || 'sa',
-  password: process.env.DB_PASSWORD || 'YourPassword123',
-  server: process.env.DB_SERVER || 'localhost',
+  password: process.env.DB_PASSWORD || 'YourPassword123!',
+  server: process.env.DB_SERVER || 'DESKTOP\\EXPRESS',
   database: process.env.DB_NAME || 'MotelDB',
   options: {
-    encrypt: true, // Para Azure
-    trustServerCertificate: true // Para desarrollo local
+    encrypt: false, // Deshabilitar encriptación para compatibilidad
+    trustServerCertificate: true, // Para desarrollo local
+    enableArithAbort: true
   },
   pool: {
     max: 10,
