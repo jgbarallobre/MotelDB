@@ -29,6 +29,45 @@ USE MotelDB;
 GO
 
 -- ============================================================================
+-- TABLA: Usuarios
+-- Descripción: Almacena los usuarios del sistema con sus credenciales
+-- ============================================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Usuarios')
+BEGIN
+    CREATE TABLE Usuarios (
+        id INT PRIMARY KEY IDENTITY(1,1),
+        username VARCHAR(50) NOT NULL UNIQUE,
+        password_hash VARCHAR(255) NOT NULL,
+        nombre VARCHAR(100) NOT NULL,
+        email VARCHAR(100),
+        rol VARCHAR(20) NOT NULL CHECK (rol IN ('Admin', 'Recepcionista', 'Gerente')),
+        activo BIT DEFAULT 1,
+        fecha_creacion DATETIME2 DEFAULT GETDATE(),
+        ultimo_acceso DATETIME2
+    );
+    PRINT '✅ Tabla Usuarios creada';
+END
+GO
+
+-- ============================================================================
+-- TABLA: LogAccesos
+-- Descripción: Registra los accesos al sistema para auditoría
+-- ============================================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'LogAccesos')
+BEGIN
+    CREATE TABLE LogAccesos (
+        id INT PRIMARY KEY IDENTITY(1,1),
+        usuario_id INT NOT NULL,
+        accion VARCHAR(50) NOT NULL,
+        ip_address VARCHAR(50),
+        fecha DATETIME2 DEFAULT GETDATE(),
+        CONSTRAINT FK_LogAccesos_Usuarios FOREIGN KEY (usuario_id) REFERENCES Usuarios(id)
+    );
+    PRINT '✅ Tabla LogAccesos creada';
+END
+GO
+
+-- ============================================================================
 -- TABLA: Habitaciones
 -- Descripción: Almacena información de las habitaciones del motel
 -- ============================================================================
@@ -178,6 +217,12 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_clientes_documento')
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_pagos_reserva')
     CREATE INDEX idx_pagos_reserva ON Pagos(reserva_id);
 
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_usuarios_username')
+    CREATE INDEX idx_usuarios_username ON Usuarios(username);
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_logaccesos_usuario')
+    CREATE INDEX idx_logaccesos_usuario ON LogAccesos(usuario_id);
+
 PRINT '✅ Índices creados';
 GO
 
@@ -258,6 +303,19 @@ GO
 -- ============================================================================
 -- DATOS DE EJEMPLO
 -- ============================================================================
+
+-- Usuarios de ejemplo
+IF NOT EXISTS (SELECT * FROM Usuarios)
+BEGIN
+    INSERT INTO Usuarios (username, password_hash, nombre, email, rol, activo)
+    VALUES
+        ('admin', 'admin123', 'Administrador', 'admin@motel.com', 'Admin', 1),
+        ('recepcion', 'recep123', 'Recepcionista', 'recepcion@motel.com', 'Recepcionista', 1),
+        ('gerente', 'gerente123', 'Gerente', 'gerente@motel.com', 'Gerente', 1);
+    
+    PRINT '✅ Usuarios de ejemplo insertados';
+END
+GO
 
 -- Verificar si ya existen datos
 IF NOT EXISTS (SELECT * FROM Habitaciones)
@@ -393,11 +451,11 @@ PRINT '=========================================================================
 PRINT '✅ BASE DE DATOS INICIALIZADA CORRECTAMENTE';
 PRINT '============================================================================';
 PRINT 'Base de datos: MotelDB';
-PRINT 'Tablas creadas: 6';
-PRINT 'Índices creados: 7';
+PRINT 'Tablas creadas: 8 (Usuarios, LogAccesos, Habitaciones, Clientes, Reservas, Pagos, ServiciosAdicionales, ReservaServicios)';
+PRINT 'Índices creados: 9';
 PRINT 'Triggers creados: 3';
 PRINT 'Vistas creadas: 2';
 PRINT 'Procedimientos almacenados: 1';
-PRINT 'Datos de ejemplo: Habitaciones y Servicios';
+PRINT 'Datos de ejemplo: Usuarios, Habitaciones y Servicios';
 PRINT '============================================================================';
 GO

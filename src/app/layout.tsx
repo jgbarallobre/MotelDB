@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Next.js Template",
-  description: "A minimal Next.js starter template",
+  title: "Sistema de Gestión - Motel",
+  description: "Sistema de gestión de habitaciones, reservas y clientes para motel",
 };
 
 export default function RootLayout({

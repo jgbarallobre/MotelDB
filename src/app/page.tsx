@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface DashboardData {
   habitaciones_disponibles: number;
@@ -22,14 +23,24 @@ interface Habitacion {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [habitaciones, setHabitaciones] = useState<Habitacion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
+    // Verificar autenticación
+    const userData = localStorage.getItem('user');
+    if (!userData) {
+      router.push('/login');
+      return;
+    }
+    setUser(JSON.parse(userData));
+    
     fetchDashboard();
     fetchHabitaciones();
-  }, []);
+  }, [router]);
 
   const fetchDashboard = async () => {
     try {
@@ -87,6 +98,11 @@ export default function Home() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    router.push('/login');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -104,10 +120,17 @@ export default function Home() {
       <header className="bg-gray-800/50 backdrop-blur-sm border-b border-gray-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-white">
-              🏨 Lobby - Motel
-            </h1>
-            <div className="flex gap-3">
+            <div>
+              <h1 className="text-2xl font-bold text-white">
+                🏨 Lobby - Motel
+              </h1>
+              {user && (
+                <p className="text-sm text-gray-400 mt-1">
+                  Bienvenido, <span className="text-blue-400 font-medium">{user.nombre}</span> ({user.rol})
+                </p>
+              )}
+            </div>
+            <div className="flex gap-3 items-center">
               <Link
                 href="/habitaciones"
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
@@ -120,6 +143,13 @@ export default function Home() {
               >
                 Reservas
               </Link>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2"
+              >
+                <span>🚪</span>
+                Salir
+              </button>
             </div>
           </div>
         </div>
