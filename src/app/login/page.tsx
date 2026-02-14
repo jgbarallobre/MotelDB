@@ -145,7 +145,7 @@ export default function LoginPage() {
                   required
                   className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                   placeholder="Ingresa tu usuario"
-                  autoComplete="username"
+                  autoComplete="off"
                 />
               </div>
             </div>
@@ -167,7 +167,7 @@ export default function LoginPage() {
                   required
                   className="w-full pl-12 pr-12 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                   placeholder="Ingresa tu contraseña"
-                  autoComplete="current-password"
+                  autoComplete="off"
                 />
                 <button
                   type="button"

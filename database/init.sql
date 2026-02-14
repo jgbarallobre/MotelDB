@@ -611,6 +611,52 @@ GO
 -- ============================================================================
 -- FINALIZACIÓN
 -- ============================================================================
+
+-- ============================================================================
+-- TABLA: TasasCambio
+-- Descripción: Historial de tasas de cambio USD/Bs
+-- ============================================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'TasasCambio')
+BEGIN
+    CREATE TABLE TasasCambio (
+        id INT PRIMARY KEY IDENTITY(1,1),
+        tasa DECIMAL(10,2) NOT NULL,
+        fecha_registro DATETIME2 DEFAULT GETDATE(),
+        usuario_registro_id INT,
+        observaciones NVARCHAR(MAX),
+        FOREIGN KEY (usuario_registro_id) REFERENCES usuarios(id)
+    );
+    PRINT '✅ Tabla TasasCambio creada';
+END
+GO
+
+-- ============================================================================
+-- TABLA: JornadasAbiertas
+-- Descripción: Control de jornadas activas con montos de apertura
+-- ============================================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'JornadasAbiertas')
+BEGIN
+    CREATE TABLE JornadasAbiertas (
+        id INT PRIMARY KEY IDENTITY(1,1),
+        jornada_id INT NOT NULL,
+        usuario_id INT NOT NULL,
+        fecha_trabajo DATE NOT NULL,
+        hora_inicio DATETIME2 NOT NULL DEFAULT GETDATE(),
+        hora_fin DATETIME2,
+        monto_apertura_bs DECIMAL(12,2) DEFAULT 0,
+        monto_apertura_usd DECIMAL(12,2) DEFAULT 0,
+        monto_cierre_bs DECIMAL(12,2),
+        monto_cierre_usd DECIMAL(12,2),
+        tasa_cambio DECIMAL(10,2) NOT NULL,
+        estado VARCHAR(20) NOT NULL DEFAULT 'Abierta',
+        observaciones NVARCHAR(MAX),
+        FOREIGN KEY (jornada_id) REFERENCES jornadas(id),
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    );
+    PRINT '✅ Tabla JornadasAbiertas creada';
+END
+GO
+
 PRINT '';
 PRINT '============================================================================';
 PRINT '✅ BASE DE DATOS INICIALIZADA CORRECTAMENTE';
