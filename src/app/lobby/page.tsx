@@ -17,6 +17,7 @@ export default function LobbyPage() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [reservasActivas, setReservasActivas] = useState<any[]>([]);
   const [processingId, setProcessingId] = useState<number | null>(null);
+  const [historialLimpieza, setHistorialLimpieza] = useState<any[]>([]);
 
   // Get filter from URL params
   useEffect(() => {
@@ -67,6 +68,7 @@ export default function LobbyPage() {
     };
     checkDbConnection();
     fetchReservasActivas();
+    fetchHistorialLimpieza();
     
     // Update time every second
     const timer = setInterval(() => {
@@ -170,6 +172,18 @@ export default function LobbyPage() {
     }
   };
 
+  const fetchHistorialLimpieza = async () => {
+    try {
+      const response = await fetch('/api/limpieza');
+      const result = await response.json();
+      if (result.success) {
+        setHistorialLimpieza(result.data);
+      }
+    } catch (error) {
+      console.error('Error cargando historial de limpieza:', error);
+    }
+  };
+
   const getReservaActiva = (habitacionId: number) => {
     return reservasActivas.find(r => r.habitacion_id === habitacionId);
   };
@@ -233,6 +247,101 @@ export default function LobbyPage() {
     } catch (error) {
       console.error('Error cambiando estado:', error);
       alert('Error cambiando estado');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  // Get the active cleaning/maintenance record for a room
+  const getHistorialActivo = (habitacionId: number) => {
+    return historialLimpieza.find(
+      h => h.habitacion_id === habitacionId && h.fecha_fin === null
+    );
+  };
+
+  // Calculate elapsed time for mantenimiento
+  const getElapsedTime = (fechaInicio: string) => {
+    const start = new Date(fechaInicio);
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - start.getTime()) / 1000);
+    
+    const hours = Math.floor(diff / 3600);
+    const minutes = Math.floor((diff % 3600) / 60);
+    const seconds = diff % 60;
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // Handle starting limpieza or mantenimiento
+  const handleIniciarLimpiezaMantenimiento = async (habitacionId: number, tipo: 'Limpieza' | 'Mantenimiento') => {
+    if (!confirm(`¿Iniciar ${tipo} para esta habitación?`)) {
+      return;
+    }
+    
+    setProcessingId(habitacionId);
+    try {
+      // Get current user from localStorage
+      const userStr = localStorage.getItem('user');
+      const user = userStr ? JSON.parse(userStr) : null;
+      
+      const response = await fetch('/api/limpieza', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accion: 'iniciar',
+          habitacion_id: habitacionId,
+          tipo_accion: tipo,
+          usuario_id: user?.id || null
+        }),
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        fetchHabitaciones();
+        fetchHistorialLimpieza();
+      } else {
+        alert('Error: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error iniciando ' + tipo + ':', error);
+      alert('Error iniciando ' + tipo);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  // Handle finishing limpieza
+  const handleFinalizarLimpieza = async (habitacionId: number) => {
+    if (!confirm('¿Confirmar limpieza realizada? La habitación pasará a estar disponible.')) {
+      return;
+    }
+    
+    setProcessingId(habitacionId);
+    try {
+      const userStr = localStorage.getItem('user');
+      const user = userStr ? JSON.parse(userStr) : null;
+      
+      const response = await fetch('/api/limpieza', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accion: 'finalizar',
+          habitacion_id: habitacionId,
+          usuario_id: user?.id || null
+        }),
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        fetchHabitaciones();
+        fetchHistorialLimpieza();
+        alert(`Limpieza finalizada. Duración: ${result.duracion_minutos} minutos`);
+      } else {
+        alert('Error: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error finalizando limpieza:', error);
+      alert('Error finalizando limpieza');
     } finally {
       setProcessingId(null);
     }
@@ -402,11 +511,12 @@ export default function LobbyPage() {
                   {habitaciones.map((habitacion) => {
                     const reserva = getReservaActiva(habitacion.id);
                     const isProcessing = processingId === habitacion.id;
+                    const historialActivo = getHistorialActivo(habitacion.id);
                     
                     return (
                       <div
                         key={habitacion.id}
-                        className={`relative bg-white/5 backdrop-blur-xl rounded-2xl border p-4 transition-all duration-300 hover:scale-105 cursor-pointer group ${
+                        className={`relative bg-white/5 backdrop-blur-xl rounded-2xl border p-4 transition-all duration-300 hover:scale-105 cursor-pointer group aspect-square flex flex-col ${
                           habitacion.estado === 'Disponible' 
                             ? 'border-green-500/30 hover:border-green-400' 
                             : habitacion.estado === 'Ocupada'
@@ -418,7 +528,7 @@ export default function LobbyPage() {
                       >
                         {/* Room Number */}
                         <div className="text-center mb-2">
-                          <span className="text-3xl font-bold text-white">{habitacion.numero}</span>
+                          <span className="text-4xl font-bold text-white">{habitacion.numero}</span>
                         </div>
                         
                         {/* Status Badge */}
@@ -427,7 +537,7 @@ export default function LobbyPage() {
                         </div>
                         
                         {/* Room Info */}
-                        <div className="text-center mb-2">
+                        <div className="text-center mb-2 flex-1">
                           <p className="text-slate-400 text-sm truncate">
                             {habitacion.descripcion || 'Sin descripción'}
                           </p>
@@ -436,17 +546,48 @@ export default function LobbyPage() {
                               Inactiva
                             </span>
                           )}
+                          
+                          {/* Timer for Mantenimiento */}
+                          {habitacion.estado === 'Mantenimiento' && historialActivo && (
+                            <div className="mt-2 p-2 bg-yellow-500/20 rounded-lg">
+                              <div className="text-xs text-yellow-300 mb-1">⏱️ En mantenimiento</div>
+                              <div className="text-xl font-mono font-bold text-yellow-400">
+                                {getElapsedTime(historialActivo.fecha_inicio)}
+                              </div>
+                              <div className="text-xs text-yellow-300 mt-1">
+                                Inicio: {new Date(historialActivo.fecha_inicio).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         {/* Operation Buttons */}
-                        <div className="mt-2">
+                        <div className="mt-2 space-y-1">
                           {habitacion.estado === 'Disponible' && (
-                            <button
-                              onClick={() => handleCheckIn(habitacion)}
-                              className="w-full py-1.5 px-2 bg-green-600 hover:bg-green-500 text-white text-xs font-medium rounded-lg transition-colors"
-                            >
-                              📥 Check-in
-                            </button>
+                            <>
+                              <button
+                                onClick={() => handleCheckIn(habitacion)}
+                                className="w-full py-1.5 px-2 bg-green-600 hover:bg-green-500 text-white text-xs font-medium rounded-lg transition-colors"
+                              >
+                                📥 Check-in
+                              </button>
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => handleIniciarLimpiezaMantenimiento(habitacion.id, 'Limpieza')}
+                                  disabled={isProcessing}
+                                  className="flex-1 py-1 px-1 bg-yellow-600 hover:bg-yellow-500 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                  🧹
+                                </button>
+                                <button
+                                  onClick={() => handleIniciarLimpiezaMantenimiento(habitacion.id, 'Mantenimiento')}
+                                  disabled={isProcessing}
+                                  className="flex-1 py-1 px-1 bg-orange-600 hover:bg-orange-500 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                  🔧
+                                </button>
+                              </div>
+                            </>
                           )}
                           
                           {habitacion.estado === 'Ocupada' && (
@@ -461,11 +602,11 @@ export default function LobbyPage() {
                           
                           {habitacion.estado === 'Limpieza' && (
                             <button
-                              onClick={() => handleCambiarEstado(habitacion.id, 'Disponible')}
+                              onClick={() => handleFinalizarLimpieza(habitacion.id)}
                               disabled={isProcessing}
                               className="w-full py-1.5 px-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
                             >
-                              {isProcessing ? '⏳' : '✅'} Disponible
+                              {isProcessing ? '⏳' : '✅'} Limpieza Realizada
                             </button>
                           )}
                           

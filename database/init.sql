@@ -518,6 +518,30 @@ END
 GO
 
 -- ============================================================================
+-- TABLA: HistorialLimpieza
+-- Descripción: Registra el historial de limpieza y mantenimiento de habitaciones
+-- ============================================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'HistorialLimpieza')
+BEGIN
+    CREATE TABLE HistorialLimpieza (
+        id INT PRIMARY KEY IDENTITY(1,1),
+        habitacion_id INT NOT NULL,
+        tipo_accion VARCHAR(20) NOT NULL CHECK (tipo_accion IN ('Limpieza', 'Mantenimiento')),
+        fecha_inicio DATETIME2 NOT NULL DEFAULT GETDATE(),
+        fecha_fin DATETIME2,
+        usuario_inicio_id INT,
+        usuario_fin_id INT,
+        observaciones NVARCHAR(MAX),
+        duracion_minutos INT, -- Calculated when finished
+        CONSTRAINT FK_HistorialLimpieza_Habitaciones FOREIGN KEY (habitacion_id) REFERENCES Habitaciones(id),
+        CONSTRAINT FK_HistorialLimpieza_UsuarioInicio FOREIGN KEY (usuario_inicio_id) REFERENCES Usuarios(id),
+        CONSTRAINT FK_HistorialLimpieza_UsuarioFin FOREIGN KEY (usuario_fin_id) REFERENCES Usuarios(id)
+    );
+    PRINT '✅ Tabla HistorialLimpieza creada';
+END
+GO
+
+-- ============================================================================
 -- VISTAS ÚTILES
 -- ============================================================================
 
