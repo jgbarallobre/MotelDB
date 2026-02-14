@@ -517,6 +517,16 @@ BEGIN
 END
 GO
 
+-- Tasa de cambio de ejemplo
+IF NOT EXISTS (SELECT * FROM TasasCambio)
+BEGIN
+    INSERT INTO TasasCambio (tasa, observaciones)
+    VALUES (36.50, 'Tasa oficial del día');
+    
+    PRINT '✅ Tasa de cambio de ejemplo insertada';
+END
+GO
+
 -- ============================================================================
 -- VISTAS ÚTILES
 -- ============================================================================

@@ -264,9 +264,14 @@ export default function LobbyPage() {
                 {habitaciones.map((habitacion) => (
                   <div
                     key={habitacion.id}
+                    onClick={() => {
+                      if (habitacion.estado === 'Disponible' && habitacion.activa !== false) {
+                        router.push(`/checkin/${habitacion.id}?habitacion_id=${habitacion.id}`);
+                      }
+                    }}
                     className={`relative bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-4 hover:bg-white/10 transition-all duration-300 hover:scale-105 cursor-pointer group ${
                       habitacion.activa === false ? 'opacity-50' : ''
-                    }`}
+                    } ${habitacion.estado === 'Disponible' && habitacion.activa !== false ? 'cursor-pointer' : 'cursor-default'}`}
                   >
                     {/* Room Number */}
                     <div className="text-center mb-3">
