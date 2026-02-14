@@ -22,6 +22,10 @@ Complete motel management system with authentication, dashboard, room management
 - [x] API routes: `/api/jornadas` (GET, POST), `/api/jornadas/[id]` (GET, PUT, DELETE)
 - [x] UI Page: `/jornadas` with shift management interface
 - [x] Database table: `Jornadas` with shifts data
+- [x] **Configuración del Motel implemented** - General settings (name, address, hours, taxes, colors)
+- [x] API route: `/api/configuracion` (GET, PUT)
+- [x] UI Page: `/configuracion` with complete settings form
+- [x] Database table: `ConfiguracionMotel` with motel settings
 
 ## Current Structure
 
@@ -35,9 +39,11 @@ Complete motel management system with authentication, dashboard, room management
 | `src/app/clientes/` | Clients/guests management | ✅ Complete |
 | `src/app/usuarios/` | Users and permissions | ✅ Complete |
 | `src/app/jornadas/` | Work shifts/jornadas management | ✅ **NEW** |
+| `src/app/configuracion/` | Motel settings/configuration | ✅ **NEW** |
 | `src/app/api/` | REST API endpoints | ✅ Complete |
 | `src/app/api/usuarios/` | Users CRUD API | ✅ Complete |
 | `src/app/api/jornadas/` | Work shifts CRUD API | ✅ **NEW** |
+| `src/app/api/configuracion/` | Motel settings API | ✅ **NEW** |
 | `src/app/api/db-status/` | Database connection check | ✅ Complete |
 
 ## Current Focus
@@ -48,7 +54,7 @@ Implementing D3xD features:
 - ✅ Datos de Facturación
 - ✅ **Usuarios y Permisos** - COMPLETED
 - ✅ **Gestión de Días/Jornadas** - COMPLETED
-- ⏳ Configuración del Motel - Next
+- ✅ **Configuración del Motel** - COMPLETED
 - ⏳ Impresoras Fiscales
 
 ## Database Configuration
@@ -62,6 +68,7 @@ SQL Server connection with status monitoring:
 
 | Date | Changes |
 |------|---------|
+| 2025-02-14 | **Configuración del Motel** - Configuración general (nombre, dirección, horarios, impuestos, colores) |
 | 2025-02-14 | **Gestión de Días/Jornadas** - CRUD completo de turnos de trabajo (Mañana, Tarde, Noche) |
 | 2025-02-14 | **Usuarios y Permisos** - CRUD completo con roles (Admin, Recepcionista, Gerente) |
 | 2025-02-12 | Complete motel management system with login, dashboard, rooms, reservations, and API routes |

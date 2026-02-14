@@ -121,6 +121,18 @@ export default function DashboardPage() {
                 ⏰ Días / Jornadas
               </button>
               <button
+                onClick={() => router.push('/usuarios')}
+                className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 transition-colors text-gray-700 hover:text-blue-600 font-medium"
+              >
+                👥 Usuarios y Permisos
+              </button>
+              <button
+                onClick={() => router.push('/configuracion')}
+                className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 transition-colors text-gray-700 hover:text-blue-600 font-medium"
+              >
+                ⚙️ Configuración
+              </button>
+              <button
                 onClick={() => router.push('/clientes')}
                 className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 transition-colors text-gray-700 hover:text-blue-600 font-medium"
               >

@@ -169,3 +169,40 @@ export interface ActualizarJornada {
   es_noche?: boolean;
   color?: string;
 }
+
+// Tipos para Configuración del Motel
+export interface ConfiguracionMotel {
+  id: number;
+  nombre_motel: string;
+  direccion: string;
+  telefono: string;
+  email: string;
+  nit: string;
+  hora_checkin: string;
+  hora_checkout: string;
+  moneda: string;
+  simbolo_moneda: string;
+  tasa_impuesto: number;
+  mensaje_recibo: string;
+  logo_url: string;
+  color_principal: string;
+  color_secundario: string;
+  fecha_actualizacion: Date;
+}
+
+export interface ActualizarConfiguracion {
+  nombre_motel?: string;
+  direccion?: string;
+  telefono?: string;
+  email?: string;
+  nit?: string;
+  hora_checkin?: string;
+  hora_checkout?: string;
+  moneda?: string;
+  simbolo_moneda?: string;
+  tasa_impuesto?: number;
+  mensaje_recibo?: string;
+  logo_url?: string;
+  color_principal?: string;
+  color_secundario?: string;
+}

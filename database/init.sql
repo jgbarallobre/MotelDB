@@ -51,6 +51,38 @@ END
 GO
 
 -- ============================================================================
+-- TABLA: ConfiguracionMotel
+-- Descripción: Configuración general del motel (un solo registro)
+-- ============================================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ConfiguracionMotel')
+BEGIN
+    CREATE TABLE ConfiguracionMotel (
+        id INT PRIMARY KEY DEFAULT 1,
+        nombre_motel NVARCHAR(100) NOT NULL DEFAULT 'Motel Premium',
+        direccion NVARCHAR(MAX) DEFAULT '',
+        telefono VARCHAR(20) DEFAULT '',
+        email VARCHAR(100) DEFAULT '',
+        nit VARCHAR(20) DEFAULT '',
+        hora_checkin TIME DEFAULT '14:00:00',
+        hora_checkout TIME DEFAULT '12:00:00',
+        moneda VARCHAR(10) DEFAULT 'PEN',
+        simbolo_moneda VARCHAR(5) DEFAULT 'S/',
+        tasa_impuesto DECIMAL(5,2) DEFAULT 18.00, -- Porcentaje de impuesto (IGV)
+        mensaje_recibo NVARCHAR(MAX) DEFAULT 'Gracias por su visita',
+        logo_url NVARCHAR(500) DEFAULT '',
+        color_principal VARCHAR(7) DEFAULT '#1E3A8A',
+        color_secundario VARCHAR(7) DEFAULT '#3B82F6',
+        fecha_actualizacion DATETIME2 DEFAULT GETDATE()
+    );
+    
+    -- Insertar registro por defecto
+    INSERT INTO ConfiguracionMotel (id, nombre_motel) VALUES (1, 'Motel Premium');
+    
+    PRINT '✅ Tabla ConfiguracionMotel creada';
+END
+GO
+
+-- ============================================================================
 -- TABLA: Usuarios
 -- Descripción: Almacena los usuarios del sistema con sus credenciales
 -- ============================================================================
