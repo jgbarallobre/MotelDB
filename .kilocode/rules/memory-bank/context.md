@@ -48,6 +48,7 @@ Complete motel management system with authentication, dashboard, room management
 - [x] Database table: `HistorialLimpieza` tracks cleaning/maintenance with user and duration
 - [x] API route: `/api/limpieza` for iniciar/finalizar cleaning operations
 - [x] Updated lobby cards to be taller and square (aspect-square)
+- [x] **Timer para Limpieza** - Ahora muestra tiempo transcurrido y hora de inicio cuando está en limpieza
 
 ## Current Structure
 
