@@ -158,6 +158,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [loadingAuth, setLoadingAuth] = useState(true); // Track auth loading state
   const [dbConnected, setDbConnected] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [habitacionesPorVencer, setHabitacionesPorVencer] = useState<ActividadReciente[]>([]);
@@ -188,6 +189,8 @@ export default function DashboardPage() {
         }
       }
     }
+    // Mark auth check as complete
+    setLoadingAuth(false);
   }, []);
 
   useEffect(() => {
@@ -301,11 +304,12 @@ export default function DashboardPage() {
     router.push(`/habitaciones?estado=${estado}`);
   };
 
+  // Redirect to login if not authenticated - only after auth check is complete
   useEffect(() => {
-    if (!user) {
+    if (!loadingAuth && !user) {
       router.push('/login');
     }
-  }, [user, router]);
+  }, [user, router, loadingAuth]);
 
   const handleLogout = () => {
     localStorage.removeItem('user');
