@@ -43,6 +43,11 @@ Complete motel management system with authentication, dashboard, room management
 - [x] **Maestro-Habitaciones Refactored** - Full CRUD with number, description, active/inactive state
 - [x] Added "activa" field to Habitaciones table and API for enable/disable
 - [x] API `/api/reservas` now supports `por_vencer` filter for expiring reservations
+- [x] **Limpieza/Mantenimiento Enhanced** - Buttons for cleaning and maintenance on available rooms
+- [x] Timer shows elapsed time when room is in maintenance mode
+- [x] Database table: `HistorialLimpieza` tracks cleaning/maintenance with user and duration
+- [x] API route: `/api/limpieza` for iniciar/finalizar cleaning operations
+- [x] Updated lobby cards to be taller and square (aspect-square)
 
 ## Current Structure
 
@@ -63,6 +68,7 @@ Complete motel management system with authentication, dashboard, room management
 | `src/app/api/jornadas/` | Work shifts CRUD API | ✅ **NEW** |
 | `src/app/api/configuracion/` | Motel settings API | ✅ **NEW** |
 | `src/app/api/db-status/` | Database connection check | ✅ Complete |
+| `src/app/api/limpieza/` | Cleaning/maintenance operations API | ✅ **NEW** |
 
 ## Current Focus
 
@@ -87,6 +93,7 @@ SQL Server connection with status monitoring:
 
 | Date | Changes |
 |------|---------|
+| 2025-02-14 | **Limpieza/Mantenimiento Enhanced** - Buttons for cleaning/maintenance on available rooms, timer for maintenance, HistorialLimpieza table |
 | 2025-02-14 | **Fix Login Redirect** - Added loadingAuth state to prevent race condition between localStorage load and redirect |
 | 2025-02-14 | **UI/UX Visual Improvements** - Modern dark theme with glassmorphism, sidebar navigation, gradient cards, animations |
 | 2025-02-14 | **Impresoras Fiscales** - Configuración de impresoras (Fiscal, No Fiscal, Ticketera) |
