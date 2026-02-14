@@ -176,6 +176,8 @@ export default function DashboardPage() {
     limpieza: 0,
     mantenimiento: 0
   });
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   useEffect(() => {
     const checkDbConnection = async () => {
@@ -188,6 +190,13 @@ export default function DashboardPage() {
       }
     };
     checkDbConnection();
+
+    // Actualizar hora cada segundo
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+      setCurrentDate(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
   }, []);
 
   // Cargar habitaciones por vencer
@@ -346,6 +355,26 @@ export default function DashboardPage() {
               <div className="hidden sm:block">
                 <p className="text-sm font-medium text-white">{user.nombre}</p>
                 <p className="text-xs text-slate-400">{user.rol}</p>
+              </div>
+            </div>
+
+            {/* Clock and Date */}
+            <div className="flex flex-col items-end bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-xl px-4 py-2 border border-white/10">
+              <div className="text-2xl font-bold text-white tracking-wider font-mono">
+                {currentTime.toLocaleTimeString('es-AR', { 
+                  hour: '2-digit', 
+                  minute: '2-digit', 
+                  second: '2-digit',
+                  hour12: false 
+                })}
+              </div>
+              <div className="text-xs text-slate-300 font-medium">
+                {currentDate.toLocaleDateString('es-AR', { 
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric'
+                })}
               </div>
             </div>
 
