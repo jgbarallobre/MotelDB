@@ -29,6 +29,28 @@ USE MotelDB;
 GO
 
 -- ============================================================================
+-- TABLA: Jornadas
+-- Descripción: Catálogo de jornadas/turnos de trabajo del motel
+-- ============================================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Jornadas')
+BEGIN
+    CREATE TABLE Jornadas (
+        id INT PRIMARY KEY IDENTITY(1,1),
+        nombre VARCHAR(50) NOT NULL UNIQUE,
+        descripcion NVARCHAR(MAX),
+        hora_inicio TIME NOT NULL,
+        hora_fin TIME NOT NULL,
+        duracion_horas DECIMAL(5,2) NOT NULL,
+        activo BIT DEFAULT 1,
+        es_noche BIT DEFAULT 0,
+        color VARCHAR(7) DEFAULT '#3B82F6',
+        fecha_creacion DATETIME2 DEFAULT GETDATE()
+    );
+    PRINT '✅ Tabla Jornadas creada';
+END
+GO
+
+-- ============================================================================
 -- TABLA: Usuarios
 -- Descripción: Almacena los usuarios del sistema con sus credenciales
 -- ============================================================================
@@ -256,6 +278,9 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_logaccesos_usuario')
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_tipos_estadia_activo')
     CREATE INDEX idx_tipos_estadia_activo ON TiposEstadia(activo);
 
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_jornadas_activo')
+    CREATE INDEX idx_jornadas_activo ON Jornadas(activo);
+
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_clientes_documento')
     CREATE INDEX idx_clientes_documento ON Clientes(documento);
 
@@ -404,6 +429,22 @@ BEGIN
         ('Desayuno', 'Desayuno continental', 12.00, 1);
     
     PRINT '✅ Servicios adicionales de ejemplo insertados';
+END
+GO
+
+-- Datos de ejemplo para Jornadas
+IF NOT EXISTS (SELECT * FROM Jornadas)
+BEGIN
+    -- Jornadas de trabajo
+    INSERT INTO Jornadas (nombre, descripcion, hora_inicio, hora_fin, duracion_horas, activo, es_noche, color)
+    VALUES
+        ('Mañana', 'Turno de mañana', '06:00:00', '14:00:00', 8, 1, 0, '#22C55E'),
+        ('Tarde', 'Turno de tarde', '14:00:00', '22:00:00', 8, 1, 0, '#F59E0B'),
+        ('Noche', 'Turno de noche', '22:00:00', '06:00:00', 8, 1, 1, '#8B5CF6'),
+        ('Diurno Completo', 'Jornada diurna completa', '08:00:00', '20:00:00', 12, 1, 0, '#3B82F6'),
+        ('Nocturno Completo', 'Jornada nocturna completa', '20:00:00', '08:00:00', 12, 1, 1, '#7C3AED');
+    
+    PRINT '✅ Jornadas de ejemplo insertadas';
 END
 GO
 

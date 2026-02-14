@@ -18,6 +18,10 @@ Complete motel management system with authentication, dashboard, room management
 - [x] **Usuarios y Permisos implemented** - CRUD for users with roles (Admin, Recepcionista, Gerente)
 - [x] API routes: `/api/usuarios` (GET, POST), `/api/usuarios/[id]` (GET, PUT, DELETE)
 - [x] UI Page: `/usuarios` with user management interface
+- [x] **Gestión de Días/Jornadas implemented** - CRUD for work shifts (Mañana, Tarde, Noche)
+- [x] API routes: `/api/jornadas` (GET, POST), `/api/jornadas/[id]` (GET, PUT, DELETE)
+- [x] UI Page: `/jornadas` with shift management interface
+- [x] Database table: `Jornadas` with shifts data
 
 ## Current Structure
 
@@ -29,9 +33,11 @@ Complete motel management system with authentication, dashboard, room management
 | `src/app/habitaciones/` | Room management interface | ✅ Complete |
 | `src/app/reservas/` | Reservations management | ✅ Complete |
 | `src/app/clientes/` | Clients/guests management | ✅ Complete |
-| `src/app/usuarios/` | Users and permissions | ✅ **NEW** |
+| `src/app/usuarios/` | Users and permissions | ✅ Complete |
+| `src/app/jornadas/` | Work shifts/jornadas management | ✅ **NEW** |
 | `src/app/api/` | REST API endpoints | ✅ Complete |
-| `src/app/api/usuarios/` | Users CRUD API | ✅ **NEW** |
+| `src/app/api/usuarios/` | Users CRUD API | ✅ Complete |
+| `src/app/api/jornadas/` | Work shifts CRUD API | ✅ **NEW** |
 | `src/app/api/db-status/` | Database connection check | ✅ Complete |
 
 ## Current Focus
@@ -41,8 +47,8 @@ Implementing D3xD features:
 - ✅ Registro de Huéspedes (Clientes)
 - ✅ Datos de Facturación
 - ✅ **Usuarios y Permisos** - COMPLETED
-- ⏳ Gestión de Días/Jornadas - Next
-- ⏳ Configuración del Motel
+- ✅ **Gestión de Días/Jornadas** - COMPLETED
+- ⏳ Configuración del Motel - Next
 - ⏳ Impresoras Fiscales
 
 ## Database Configuration
@@ -56,6 +62,7 @@ SQL Server connection with status monitoring:
 
 | Date | Changes |
 |------|---------|
+| 2025-02-14 | **Gestión de Días/Jornadas** - CRUD completo de turnos de trabajo (Mañana, Tarde, Noche) |
 | 2025-02-14 | **Usuarios y Permisos** - CRUD completo con roles (Admin, Recepcionista, Gerente) |
 | 2025-02-12 | Complete motel management system with login, dashboard, rooms, reservations, and API routes |
 | 2025-02-12 | Repository migrated from Kilo builder to GitHub (jgbarallobre/MotelDB) |

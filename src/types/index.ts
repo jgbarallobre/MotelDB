@@ -133,3 +133,39 @@ export interface ActualizarUsuario {
   activo?: boolean;
   password?: string; // Opcional, para cambiar contraseña
 }
+
+// Tipos para Jornadas
+export interface Jornada {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+  hora_inicio: string;
+  hora_fin: string;
+  duracion_horas: number;
+  activo: boolean;
+  es_noche: boolean;
+  color: string;
+  fecha_creacion: Date;
+}
+
+export interface NuevaJornada {
+  nombre: string;
+  descripcion?: string;
+  hora_inicio: string;
+  hora_fin: string;
+  duracion_horas: number;
+  activo?: boolean;
+  es_noche?: boolean;
+  color?: string;
+}
+
+export interface ActualizarJornada {
+  nombre?: string;
+  descripcion?: string;
+  hora_inicio?: string;
+  hora_fin?: string;
+  duracion_horas?: number;
+  activo?: boolean;
+  es_noche?: boolean;
+  color?: string;
+}
