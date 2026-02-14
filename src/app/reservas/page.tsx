@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 interface ReservaExtendida {
   id: number;
@@ -18,12 +19,21 @@ interface ReservaExtendida {
 }
 
 export default function ReservasPage() {
+  const searchParams = useSearchParams();
   const [reservas, setReservas] = useState<ReservaExtendida[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState<string>('Activa');
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [reservaSeleccionada, setReservaSeleccionada] = useState<number | null>(null);
   const [metodoPago, setMetodoPago] = useState<string>('Efectivo');
+
+  // Check for por_vencer param in URL
+  useEffect(() => {
+    const porVencer = searchParams.get('por_vencer');
+    if (porVencer === 'true') {
+      setFiltroEstado('por_vencer');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchReservas();
@@ -32,9 +42,12 @@ export default function ReservasPage() {
 
   const fetchReservas = async () => {
     try {
-      const url = filtroEstado
-        ? `/api/reservas?estado=${filtroEstado}`
-        : '/api/reservas';
+      let url = '/api/reservas';
+      if (filtroEstado === 'por_vencer') {
+        url += '?por_vencer=true';
+      } else if (filtroEstado) {
+        url += `?estado=${filtroEstado}`;
+      }
       const response = await fetch(url);
       const result = await response.json();
       if (result.success) {

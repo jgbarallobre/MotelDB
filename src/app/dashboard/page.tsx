@@ -78,16 +78,11 @@ const mantenimientoMenu: MenuItem[] = [
   { label: 'Configuraciones', icon: '⚙️', path: '/configuracion', color: 'bg-orange-500' },
 ];
 
-function MenuSection({ title, items, icon, onLobbyClick }: MenuSectionProps) {
+function MenuSection({ title, items, icon }: MenuSectionProps) {
   const router = useRouter();
   
   const handleClick = (item: MenuItem) => {
-    if (item.path === '/lobby' && onLobbyClick) {
-      // Cargar vista de Lobby
-      onLobbyClick();
-    } else {
-      router.push(item.path);
-    }
+    router.push(item.path);
   };
   
   return (
@@ -299,9 +294,9 @@ export default function DashboardPage() {
     }
   };
 
-  // Navegar a habitaciones con filtro
-  const navigateToHabitaciones = (estado: string) => {
-    router.push(`/habitaciones?estado=${estado}`);
+  // Navegar a lobby con filtro
+  const navigateToLobby = (estado: string) => {
+    router.push(`/lobby?estado=${estado}`);
   };
 
   // Redirect to login if not authenticated - only after auth check is complete
@@ -419,7 +414,7 @@ export default function DashboardPage() {
         <aside className={`${sidebarOpen ? 'w-72' : 'w-0'} transition-all duration-300 overflow-hidden`}>
           <div className="w-72 h-[calc(100vh-64px)] bg-slate-900/50 backdrop-blur-xl border-r border-white/10 p-4 overflow-y-auto">
             <MenuSection title="Maestro" icon="📁" items={maestroMenu} />
-            <MenuSection title="Lobby" icon="🏠" items={lobbyMenu} onLobbyClick={cargarHabitacionesLobby} />
+            <MenuSection title="Lobby" icon="🏠" items={lobbyMenu} />
             <MenuSection title="Mantenimiento" icon="🔧" items={mantenimientoMenu} />
           </div>
         </aside>
@@ -445,7 +440,7 @@ export default function DashboardPage() {
               trend="Listas para usar"
               trendUp={null}
               gradient="from-green-500 to-emerald-600"
-              onClick={() => navigateToHabitaciones('Disponible')}
+              onClick={() => navigateToLobby('Disponible')}
             />
             <StatCard
               title="Ocupadas"
@@ -454,7 +449,7 @@ export default function DashboardPage() {
               trend="En uso"
               trendUp={null}
               gradient="from-blue-500 to-cyan-600"
-              onClick={() => navigateToHabitaciones('Ocupada')}
+              onClick={() => navigateToLobby('Ocupada')}
             />
             <StatCard
               title="Limpieza"
@@ -463,7 +458,7 @@ export default function DashboardPage() {
               trend="Por limpiar"
               trendUp={null}
               gradient="from-yellow-500 to-orange-600"
-              onClick={() => navigateToHabitaciones('Limpieza')}
+              onClick={() => navigateToLobby('Limpieza')}
             />
             <StatCard
               title="Mantenimiento"
@@ -472,7 +467,7 @@ export default function DashboardPage() {
               trend="En reparación"
               trendUp={null}
               gradient="from-red-500 to-pink-600"
-              onClick={() => navigateToHabitaciones('Mantenimiento')}
+              onClick={() => navigateToLobby('Mantenimiento')}
             />
             <StatCard
               title="Por Vencer (5 min)"
@@ -481,6 +476,7 @@ export default function DashboardPage() {
               trend="Requiere atención"
               trendUp={null}
               gradient="from-red-500 to-orange-600"
+              onClick={() => router.push('/reservas?por_vencer=true')}
             />
           </div>
 
