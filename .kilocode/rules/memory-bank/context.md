@@ -2,9 +2,9 @@
 
 ## Current State
 
-**Repository Status**: ✅ Code pushed to GitHub
+**Repository Status**: ✅ Code pushed to builder.kiloapps.io
 
-Complete motel management system with authentication, dashboard, room management, reservations, users, and permissions. All commits pushed to GitHub.
+Complete motel management system with authentication, dashboard, room management, reservations, users, and permissions.
 
 ## Recently Completed
 
@@ -43,6 +43,20 @@ Complete motel management system with authentication, dashboard, room management
 - [x] **Maestro-Habitaciones Refactored** - Full CRUD with number, description, active/inactive state
 - [x] Added "activa" field to Habitaciones table and API for enable/disable
 - [x] API `/api/reservas` now supports `por_vencer` filter for expiring reservations
+- [x] **Check-in Flow Implemented** - Complete check-in system with:
+  - [x] Select room from Lobby → Check-in page
+  - [x] Type of stay selection (from TiposEstadia table)
+  - [x] Client data with Cédula/RIF validation (V/J/G + numbers)
+  - [x] Auto-search client by document in Clientes table
+  - [x] Price display in $ and BS (using tasaCambio from TasasCambio table)
+  - [x] Products button (pending POS development)
+  - [x] Payment selection page with multiple payment methods
+  - [x] Post-payment summary with pre-factura and factura options
+  - [x] Room status updates to "Ocupada" after check-in
+  - [x] Shows entry time, exit time, remaining time, and stay price
+- [x] API `/api/checkin` - Complete check-in processing with payment
+- [x] API `/api/clientes/buscar` - Search client by document
+- [x] Added tasaCambio sample data to database init.sql
 
 ## Current Structure
 
@@ -55,13 +69,19 @@ Complete motel management system with authentication, dashboard, room management
 | `src/app/reservas/` | Reservations management | ✅ Complete |
 | `src/app/clientes/` | Clients/guests management | ✅ Complete |
 | `src/app/usuarios/` | Users and permissions | ✅ Complete |
-| `src/app/jornadas/` | Work shifts/jornadas management | ✅ **NEW** |
-| `src/app/configuracion/` | Motel settings/configuration | ✅ **NEW** |
-| `src/app/impresoras/` | Printers/fiscal printers management | ✅ **NEW** |
+| `src/app/jornadas/` | Work shifts/jornadas management | ✅ Complete |
+| `src/app/configuracion/` | Motel settings/configuration | ✅ Complete |
+| `src/app/impresoras/` | Printers/fiscal printers management | ✅ Complete |
+| `src/app/lobby/` | Room status view with check-in redirect | ✅ Complete |
+| `src/app/checkin/[id]/` | **NEW** - Check-in flow | ✅ Complete |
+| `src/app/checkin/[id]/pago/` | **NEW** - Payment selection | ✅ Complete |
+| `src/app/checkin/[id]/resumen/` | **NEW** - Post-payment summary | ✅ Complete |
 | `src/app/api/` | REST API endpoints | ✅ Complete |
+| `src/app/api/checkin/` | **NEW** - Check-in processing API | ✅ Complete |
+| `src/app/api/clientes/buscar/` | **NEW** - Client search API | ✅ Complete |
 | `src/app/api/usuarios/` | Users CRUD API | ✅ Complete |
-| `src/app/api/jornadas/` | Work shifts CRUD API | ✅ **NEW** |
-| `src/app/api/configuracion/` | Motel settings API | ✅ **NEW** |
+| `src/app/api/jornadas/` | Work shifts CRUD API | ✅ Complete |
+| `src/app/api/configuracion/` | Motel settings API | ✅ Complete |
 | `src/app/api/db-status/` | Database connection check | ✅ Complete |
 
 ## Current Focus
@@ -74,7 +94,13 @@ All D3xD features implemented:
 - ✅ Gestión de Días/Jornadas
 - ✅ Configuración del Motel
 - ✅ Impresoras Fiscales
+- ✅ **Check-in Flow** - COMPLETED
 - ✅ **UI/UX Visual Improvements** - COMPLETED
+
+Pending:
+- POS (Productos Tienda)
+- Checkout process
+- Printing integration
 
 ## Database Configuration
 
@@ -87,6 +113,7 @@ SQL Server connection with status monitoring:
 
 | Date | Changes |
 |------|---------|
+| 2025-02-14 | **Check-in Flow** - Complete check-in system with payment, summary, and room status update |
 | 2025-02-14 | **Fix Login Redirect** - Added loadingAuth state to prevent race condition between localStorage load and redirect |
 | 2025-02-14 | **UI/UX Visual Improvements** - Modern dark theme with glassmorphism, sidebar navigation, gradient cards, animations |
 | 2025-02-14 | **Impresoras Fiscales** - Configuración de impresoras (Fiscal, No Fiscal, Ticketera) |
