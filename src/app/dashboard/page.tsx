@@ -156,13 +156,8 @@ function ActivityItem({ icon, title, description, time }: ActivityItemProps) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(() => {
-    if (typeof window !== 'undefined') {
-      const userData = localStorage.getItem('user');
-      return userData ? JSON.parse(userData) : null;
-    }
-    return null;
-  });
+  const [mounted, setMounted] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const [dbConnected, setDbConnected] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [habitacionesPorVencer, setHabitacionesPorVencer] = useState<ActividadReciente[]>([]);
@@ -178,6 +173,22 @@ export default function DashboardPage() {
   });
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentDate, setCurrentDate] = useState(new Date());
+
+  // Hydration fix - set mounted after client-side render
+  useEffect(() => {
+    setMounted(true);
+    // Load user from localStorage on client
+    if (typeof window !== 'undefined') {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        try {
+          setUser(JSON.parse(userData));
+        } catch (e) {
+          localStorage.removeItem('user');
+        }
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const checkDbConnection = async () => {
@@ -300,6 +311,14 @@ export default function DashboardPage() {
     localStorage.removeItem('user');
     router.push('/login');
   };
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
