@@ -284,6 +284,9 @@ export default function LobbyPage() {
       const userStr = localStorage.getItem('user');
       const user = userStr ? JSON.parse(userStr) : null;
       
+      // Send local time from the client (browser/PC time)
+      const fechaInicio = new Date().toISOString();
+      
       const response = await fetch('/api/limpieza', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -291,7 +294,8 @@ export default function LobbyPage() {
           accion: 'iniciar',
           habitacion_id: habitacionId,
           tipo_accion: tipo,
-          usuario_id: user?.id || null
+          usuario_id: user?.id || null,
+          fecha_inicio: fechaInicio
         }),
       });
       const result = await response.json();

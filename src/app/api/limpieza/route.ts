@@ -90,15 +90,18 @@ export async function POST(request: Request) {
         .input('estado', tipo_accion)
         .query(`UPDATE Habitaciones SET estado = @estado WHERE id = @habitacion_id`);
 
-      // Registrar en historial
+      // Registrar en historial - usar la fecha enviada por el cliente (hora local del navegador)
+      const fechaInicio = body.fecha_inicio || new Date().toISOString();
+      
       const result = await pool.request()
         .input('habitacion_id', habitacion_id)
         .input('tipo_accion', tipo_accion)
         .input('usuario_id', usuario_id)
         .input('observaciones', observaciones || '')
+        .input('fecha_inicio', fechaInicio)
         .query(`
           INSERT INTO HistorialLimpieza (habitacion_id, tipo_accion, fecha_inicio, usuario_inicio_id, observaciones)
-          VALUES (@habitacion_id, @tipo_accion, GETDATE(), @usuario_id, @observaciones);
+          VALUES (@habitacion_id, @tipo_accion, @fecha_inicio, @usuario_id, @observaciones);
           SELECT SCOPE_IDENTITY() as id;
         `);
 
