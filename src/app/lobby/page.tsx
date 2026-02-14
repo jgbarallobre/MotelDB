@@ -8,22 +8,47 @@ export default function LobbyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [habitaciones, setHabitaciones] = useState<Habitacion[]>([]);
+  const [reservasPorVencer, setReservasPorVencer] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState<string>('');
   const [filtroActiva, setFiltroActiva] = useState<string>('');
+  const [filtroPorVencer, setFiltroPorVencer] = useState<boolean>(false);
   const [dbConnected, setDbConnected] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Get filter from URL params
   useEffect(() => {
+    const filterParam = searchParams.get('filter');
+    
+    // Map filter values to estado values
+    if (filterParam) {
+      switch (filterParam) {
+        case 'disponibles':
+          setFiltroEstado('Disponible');
+          break;
+        case 'ocupadas':
+          setFiltroEstado('Ocupada');
+          break;
+        case 'limpieza':
+          setFiltroEstado('Limpieza');
+          break;
+        case 'mantenimiento':
+          setFiltroEstado('Mantenimiento');
+          break;
+        case 'por_vencer':
+          // Handle por_vencer filter - will show expiring reservations
+          setFiltroPorVencer(true);
+          fetchReservasPorVencer();
+          break;
+        default:
+          setFiltroEstado('');
+      }
+    }
+    
+    // Also support legacy 'estado' param for backward compatibility
     const estadoParam = searchParams.get('estado');
     if (estadoParam) {
       setFiltroEstado(estadoParam);
-    }
-    
-    const porVencerParam = searchParams.get('por_vencer');
-    if (porVencerParam === 'true') {
-      // Handle por_vencer filter - will show expiring reservations
     }
   }, [searchParams]);
 
@@ -49,8 +74,10 @@ export default function LobbyPage() {
 
   // Fetch rooms when filters change
   useEffect(() => {
-    fetchHabitaciones();
-  }, [filtroEstado, filtroActiva]);
+    if (!filtroPorVencer) {
+      fetchHabitaciones();
+    }
+  }, [filtroEstado, filtroActiva, filtroPorVencer]);
 
   const fetchHabitaciones = async () => {
     setLoading(true);
@@ -77,6 +104,22 @@ export default function LobbyPage() {
       }
     } catch (error) {
       console.error('Error cargando habitaciones:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchReservasPorVencer = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/reservas?por_vencer=true');
+      const result = await response.json();
+      
+      if (result.success) {
+        setReservasPorVencer(result.data);
+      }
+    } catch (error) {
+      console.error('Error cargando reservas por vencer:', error);
     } finally {
       setLoading(false);
     }
@@ -112,11 +155,11 @@ export default function LobbyPage() {
     }
   };
 
-  const navigateToLobby = (estado: string) => {
-    if (estado === 'all') {
+  const navigateToLobby = (filter: string) => {
+    if (filter === 'all') {
       router.push('/lobby');
     } else {
-      router.push(`/lobby?estado=${estado}`);
+      router.push(`/lobby?filter=${filter}`);
     }
   };
 
@@ -189,7 +232,7 @@ export default function LobbyPage() {
           <button
             onClick={() => navigateToLobby('all')}
             className={`px-4 py-2 rounded-lg font-medium transition-all ${
-              filtroEstado === ''
+              filtroEstado === '' && !filtroPorVencer
                 ? 'bg-white text-slate-900'
                 : 'bg-white/10 text-white hover:bg-white/20'
             }`}
@@ -197,7 +240,7 @@ export default function LobbyPage() {
             Todas ({stats.total})
           </button>
           <button
-            onClick={() => navigateToLobby('Disponible')}
+            onClick={() => navigateToLobby('disponibles')}
             className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
               filtroEstado === 'Disponible'
                 ? 'bg-green-500 text-white'
@@ -208,7 +251,7 @@ export default function LobbyPage() {
             Disponibles ({stats.disponibles})
           </button>
           <button
-            onClick={() => navigateToLobby('Ocupada')}
+            onClick={() => navigateToLobby('ocupadas')}
             className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
               filtroEstado === 'Ocupada'
                 ? 'bg-blue-500 text-white'
@@ -219,7 +262,7 @@ export default function LobbyPage() {
             Ocupadas ({stats.ocupadas})
           </button>
           <button
-            onClick={() => navigateToLobby('Limpieza')}
+            onClick={() => navigateToLobby('limpieza')}
             className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
               filtroEstado === 'Limpieza'
                 ? 'bg-yellow-500 text-white'
@@ -230,7 +273,7 @@ export default function LobbyPage() {
             Limpieza ({stats.limpieza})
           </button>
           <button
-            onClick={() => navigateToLobby('Mantenimiento')}
+            onClick={() => navigateToLobby('mantenimiento')}
             className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
               filtroEstado === 'Mantenimiento'
                 ? 'bg-red-500 text-white'
@@ -240,63 +283,127 @@ export default function LobbyPage() {
             <span className="w-2 h-2 rounded-full bg-red-400"></span>
             Mantenimiento ({stats.mantenimiento})
           </button>
+          <button
+            onClick={() => navigateToLobby('por_vencer')}
+            className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+              filtroPorVencer
+                ? 'bg-orange-500 text-white'
+                : 'bg-orange-500/20 text-orange-300 hover:bg-orange-500/30'
+            }`}
+          >
+            <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse"></span>
+            Por Vencer ({reservasPorVencer.length})
+          </button>
         </div>
 
-        {/* Room Grid */}
-        {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-          </div>
-        ) : (
-          <>
-            {habitaciones.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-6xl mb-4">🏨</div>
-                <h3 className="text-xl font-semibold text-white mb-2">No hay habitaciones</h3>
-                <p className="text-slate-400">
-                  {filtroEstado 
-                    ? `No hay habitaciones con estado "${getEstadoLabel(filtroEstado)}"`
-                    : 'No hay habitaciones disponibles'}
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {habitaciones.map((habitacion) => (
-                  <div
-                    key={habitacion.id}
-                    className={`relative bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-4 hover:bg-white/10 transition-all duration-300 hover:scale-105 cursor-pointer group ${
-                      habitacion.activa === false ? 'opacity-50' : ''
-                    }`}
-                  >
-                    {/* Room Number */}
-                    <div className="text-center mb-3">
-                      <span className="text-3xl font-bold text-white">{habitacion.numero}</span>
-                    </div>
-                    
-                    {/* Status Badge */}
-                    <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium text-white ${getEstadoColor(habitacion.estado)}`}>
-                      {getEstadoLabel(habitacion.estado || 'Sin estado')}
-                    </div>
-                    
-                    {/* Room Info */}
-                    <div className="text-center">
-                      <p className="text-slate-400 text-sm truncate">
-                        {habitacion.descripcion || 'Sin descripción'}
-                      </p>
-                      {habitacion.activa === false && (
-                        <span className="inline-block mt-2 px-2 py-0.5 bg-red-500/20 text-red-300 text-xs rounded-full">
-                          Inactiva
-                        </span>
-                      )}
-                    </div>
+        {/* Room Grid - Only show regular rooms when not in por_vencer mode */}
+        {!filtroPorVencer ? (
+          loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+            </div>
+          ) : (
+            <>
+              {habitaciones.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">🏨</div>
+                  <h3 className="text-xl font-semibold text-white mb-2">No hay habitaciones</h3>
+                  <p className="text-slate-400">
+                    {filtroEstado 
+                      ? `No hay habitaciones con estado "${getEstadoLabel(filtroEstado)}"`
+                      : 'No hay habitaciones disponibles'}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  {habitaciones.map((habitacion) => (
+                    <div
+                      key={habitacion.id}
+                      className={`relative bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-4 hover:bg-white/10 transition-all duration-300 hover:scale-105 cursor-pointer group ${
+                        habitacion.activa === false ? 'opacity-50' : ''
+                      }`}
+                    >
+                      {/* Room Number */}
+                      <div className="text-center mb-3">
+                        <span className="text-3xl font-bold text-white">{habitacion.numero}</span>
+                      </div>
+                      
+                      {/* Status Badge */}
+                      <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium text-white ${getEstadoColor(habitacion.estado)}`}>
+                        {getEstadoLabel(habitacion.estado || 'Sin estado')}
+                      </div>
+                      
+                      {/* Room Info */}
+                      <div className="text-center">
+                        <p className="text-slate-400 text-sm truncate">
+                          {habitacion.descripcion || 'Sin descripción'}
+                        </p>
+                        {habitacion.activa === false && (
+                          <span className="inline-block mt-2 px-2 py-0.5 bg-red-500/20 text-red-300 text-xs rounded-full">
+                            Inactiva
+                          </span>
+                        )}
+                      </div>
 
-                    {/* Hover Effect */}
-                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
+                      {/* Hover Effect */}
+                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )
+        ) : (
+          /* Por Vencer View - Show reservations about to expire */
+          loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+            </div>
+          ) : (
+            <>
+              {reservasPorVencer.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">✅</div>
+                  <h3 className="text-xl font-semibold text-white mb-2">No hay habitaciones por vencer</h3>
+                  <p className="text-slate-400">
+                    Todas las habitaciones tienen tiempo suficiente
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  {reservasPorVencer.map((reserva) => (
+                    <div
+                      key={reserva.id}
+                      className="relative bg-white/5 backdrop-blur-xl rounded-2xl border border-orange-500/30 p-4 hover:bg-white/10 transition-all duration-300 hover:scale-105 cursor-pointer group"
+                    >
+                      {/* Room Number */}
+                      <div className="text-center mb-3">
+                        <span className="text-3xl font-bold text-white">{reserva.habitacion_numero}</span>
+                      </div>
+                      
+                      {/* Status Badge */}
+                      <div className="absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium text-white bg-orange-500">
+                        Por Vencer
+                      </div>
+                      
+                      {/* Reservation Info */}
+                      <div className="text-center">
+                        <p className="text-slate-400 text-sm truncate">
+                          {reserva.cliente_nombre} {reserva.cliente_apellido}
+                        </p>
+                        <p className="text-orange-400 text-xs mt-1">
+                          Salida: {reserva.fecha_salida}
+                        </p>
+                      </div>
+
+                      {/* Hover Effect */}
+                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )
         )}
       </div>
     </div>

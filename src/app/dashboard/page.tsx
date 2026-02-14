@@ -440,7 +440,7 @@ export default function DashboardPage() {
               trend="Listas para usar"
               trendUp={null}
               gradient="from-green-500 to-emerald-600"
-              onClick={() => navigateToLobby('Disponible')}
+              onClick={() => navigateToLobby('disponibles')}
             />
             <StatCard
               title="Ocupadas"
@@ -449,7 +449,7 @@ export default function DashboardPage() {
               trend="En uso"
               trendUp={null}
               gradient="from-blue-500 to-cyan-600"
-              onClick={() => navigateToLobby('Ocupada')}
+              onClick={() => navigateToLobby('ocupadas')}
             />
             <StatCard
               title="Limpieza"
@@ -458,7 +458,7 @@ export default function DashboardPage() {
               trend="Por limpiar"
               trendUp={null}
               gradient="from-yellow-500 to-orange-600"
-              onClick={() => navigateToLobby('Limpieza')}
+              onClick={() => navigateToLobby('limpieza')}
             />
             <StatCard
               title="Mantenimiento"
@@ -467,7 +467,7 @@ export default function DashboardPage() {
               trend="En reparación"
               trendUp={null}
               gradient="from-red-500 to-pink-600"
-              onClick={() => navigateToLobby('Mantenimiento')}
+              onClick={() => navigateToLobby('mantenimiento')}
             />
             <StatCard
               title="Por Vencer (5 min)"
@@ -476,7 +476,7 @@ export default function DashboardPage() {
               trend="Requiere atención"
               trendUp={null}
               gradient="from-red-500 to-orange-600"
-              onClick={() => router.push('/reservas?por_vencer=true')}
+              onClick={() => navigateToLobby('por_vencer')}
             />
           </div>
 
