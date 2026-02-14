@@ -133,6 +133,12 @@ export default function DashboardPage() {
                 ⚙️ Configuración
               </button>
               <button
+                onClick={() => router.push('/impresoras')}
+                className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 transition-colors text-gray-700 hover:text-blue-600 font-medium"
+              >
+                🖨️ Impresoras
+              </button>
+              <button
                 onClick={() => router.push('/clientes')}
                 className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 transition-colors text-gray-700 hover:text-blue-600 font-medium"
               >

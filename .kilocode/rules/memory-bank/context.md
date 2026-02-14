@@ -26,6 +26,10 @@ Complete motel management system with authentication, dashboard, room management
 - [x] API route: `/api/configuracion` (GET, PUT)
 - [x] UI Page: `/configuracion` with complete settings form
 - [x] Database table: `ConfiguracionMotel` with motel settings
+- [x] **Impresoras Fiscales implemented** - Printer configuration (Fiscal, No Fiscal, Ticketera)
+- [x] API routes: `/api/impresoras` (GET, POST), `/api/impresoras/[id]` (GET, PUT, DELETE)
+- [x] UI Page: `/impresoras` with printer management interface
+- [x] Database table: `Impresoras` with printer settings
 
 ## Current Structure
 
@@ -40,6 +44,7 @@ Complete motel management system with authentication, dashboard, room management
 | `src/app/usuarios/` | Users and permissions | ✅ Complete |
 | `src/app/jornadas/` | Work shifts/jornadas management | ✅ **NEW** |
 | `src/app/configuracion/` | Motel settings/configuration | ✅ **NEW** |
+| `src/app/impresoras/` | Printers/fiscal printers management | ✅ **NEW** |
 | `src/app/api/` | REST API endpoints | ✅ Complete |
 | `src/app/api/usuarios/` | Users CRUD API | ✅ Complete |
 | `src/app/api/jornadas/` | Work shifts CRUD API | ✅ **NEW** |

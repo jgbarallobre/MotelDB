@@ -83,6 +83,42 @@ END
 GO
 
 -- ============================================================================
+-- TABLA: Impresoras
+-- Descripción: Configuración de impresoras fiscales/térmicas del motel
+-- ============================================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Impresoras')
+BEGIN
+    CREATE TABLE Impresoras (
+        id INT PRIMARY KEY IDENTITY(1,1),
+        nombre VARCHAR(100) NOT NULL,
+        tipo VARCHAR(50) NOT NULL CHECK (tipo IN ('Fiscal', 'No Fiscal', 'Ticketera')),
+        modelo VARCHAR(100),
+        puerto VARCHAR(100), -- COM1, COM2, USB, RED
+        ip_address VARCHAR(50),
+        caracteres_por_linea INT DEFAULT 40,
+        activa BIT DEFAULT 1,
+        es_predeterminada BIT DEFAULT 0,
+       -- Configuración de impresión
+        imprimir_logo BIT DEFAULT 1,
+        imprimir_qr BIT DEFAULT 0,
+        copiar_recibo INT DEFAULT 1,
+       -- Mensajes personalizados
+        encabezado NVARCHAR(MAX),
+        pie_pagina NVARCHAR(MAX),
+        observaciones NVARCHAR(MAX),
+        fecha_creacion DATETIME2 DEFAULT GETDATE(),
+        fecha_actualizacion DATETIME2 DEFAULT GETDATE()
+    );
+    
+    -- Insertar impresora de ejemplo
+    INSERT INTO Impresoras (nombre, tipo, modelo, puerto, caracteres_por_linea, activa, es_predeterminada)
+    VALUES ('Ticketera Principal', 'Ticketera', 'Epson TM-T88', 'USB', 40, 1, 1);
+    
+    PRINT '✅ Tabla Impresoras creada';
+END
+GO
+
+-- ============================================================================
 -- TABLA: Usuarios
 -- Descripción: Almacena los usuarios del sistema con sus credenciales
 -- ============================================================================
