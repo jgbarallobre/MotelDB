@@ -2,16 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { Habitacion } from '@/types';
 
 export default function HabitacionesPage() {
+  const router = useRouter();
   const [habitaciones, setHabitaciones] = useState<Habitacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState<string>('');
 
   useEffect(() => {
     fetchHabitaciones();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtroEstado]);
 
   const fetchHabitaciones = async () => {
@@ -47,45 +48,93 @@ export default function HabitacionesPage() {
     }
   };
 
-  const getEstadoColor = (estado: string) => {
+  const getEstadoConfig = (estado: string) => {
     switch (estado) {
       case 'Disponible':
-        return 'bg-green-100 text-green-800';
+        return { 
+          bg: 'from-green-500 to-emerald-600', 
+          text: 'text-green-400',
+          bgLight: 'bg-green-500/10',
+          border: 'border-green-500/20',
+          icon: '✓'
+        };
       case 'Ocupada':
-        return 'bg-red-100 text-red-800';
+        return { 
+          bg: 'from-red-500 to-rose-600', 
+          text: 'text-red-400',
+          bgLight: 'bg-red-500/10',
+          border: 'border-red-500/20',
+          icon: '🔒'
+        };
       case 'Limpieza':
-        return 'bg-yellow-100 text-yellow-800';
+        return { 
+          bg: 'from-yellow-500 to-amber-600', 
+          text: 'text-yellow-400',
+          bgLight: 'bg-yellow-500/10',
+          border: 'border-yellow-500/20',
+          icon: '🧹'
+        };
       case 'Mantenimiento':
-        return 'bg-gray-100 text-gray-800';
+        return { 
+          bg: 'from-gray-500 to-slate-600', 
+          text: 'text-gray-400',
+          bgLight: 'bg-gray-500/10',
+          border: 'border-gray-500/20',
+          icon: '🔧'
+        };
       default:
-        return 'bg-gray-100 text-gray-800';
+        return { 
+          bg: 'from-gray-500 to-slate-600', 
+          text: 'text-gray-400',
+          bgLight: 'bg-gray-500/10',
+          border: 'border-gray-500/20',
+          icon: '?'
+        };
     }
   };
 
+  const filtros = [
+    { estado: '', label: 'Todas', color: 'from-slate-500 to-slate-600' },
+    { estado: 'Disponible', label: 'Disponibles', color: 'from-green-500 to-emerald-600' },
+    { estado: 'Ocupada', label: 'Ocupadas', color: 'from-red-500 to-rose-600' },
+    { estado: 'Limpieza', label: 'En Limpieza', color: 'from-yellow-500 to-amber-600' },
+    { estado: 'Mantenimiento', label: 'Mantenimiento', color: 'from-gray-500 to-slate-600' },
+  ];
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando habitaciones...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-slate-400">Cargando habitaciones...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
-      <header className="bg-white shadow">
+      <header className="bg-white/5 backdrop-blur-xl border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex justify-between items-center">
             <div>
-              <Link href="/" className="text-blue-600 hover:text-blue-800 text-sm mb-2 inline-block">
+              <Link 
+                href="/dashboard" 
+                className="text-blue-400 hover:text-blue-300 text-sm mb-2 inline-flex items-center gap-1 transition-colors"
+              >
                 ← Volver al Dashboard
               </Link>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+                <span className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-2xl">
+                  🏠
+                </span>
                 Gestión de Habitaciones
               </h1>
+            </div>
+            <div className="text-right">
+              <p className="text-slate-400 text-sm">Total de habitaciones</p>
+              <p className="text-2xl font-bold text-white">{habitaciones.length}</p>
             </div>
           </div>
         </div>
@@ -94,152 +143,120 @@ export default function HabitacionesPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Filtros */}
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-4 mb-6">
           <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={() => setFiltroEstado('')}
-              className={`px-4 py-2 rounded-lg transition ${
-                filtroEstado === ''
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Todas
-            </button>
-            <button
-              onClick={() => setFiltroEstado('Disponible')}
-              className={`px-4 py-2 rounded-lg transition ${
-                filtroEstado === 'Disponible'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Disponibles
-            </button>
-            <button
-              onClick={() => setFiltroEstado('Ocupada')}
-              className={`px-4 py-2 rounded-lg transition ${
-                filtroEstado === 'Ocupada'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Ocupadas
-            </button>
-            <button
-              onClick={() => setFiltroEstado('Limpieza')}
-              className={`px-4 py-2 rounded-lg transition ${
-                filtroEstado === 'Limpieza'
-                  ? 'bg-yellow-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              En Limpieza
-            </button>
-            <button
-              onClick={() => setFiltroEstado('Mantenimiento')}
-              className={`px-4 py-2 rounded-lg transition ${
-                filtroEstado === 'Mantenimiento'
-                  ? 'bg-gray-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Mantenimiento
-            </button>
+            {filtros.map((filtro) => (
+              <button
+                key={filtro.estado}
+                onClick={() => setFiltroEstado(filtro.estado)}
+                className={`px-4 py-2 rounded-xl transition-all duration-200 font-medium ${
+                  filtroEstado === filtro.estado
+                    ? `bg-gradient-to-r ${filtro.color} text-white shadow-lg`
+                    : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                }`}
+              >
+                {filtro.label}
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Grid de Habitaciones */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {habitaciones.map((habitacion) => (
-            <div
-              key={habitacion.id}
-              className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition"
-            >
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-2xl font-bold text-gray-900">
-                      Habitación {habitacion.numero}
-                    </h3>
-                    <p className="text-gray-600">{habitacion.tipo}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {habitaciones.map((habitacion) => {
+            const config = getEstadoConfig(habitacion.estado);
+            return (
+              <div
+                key={habitacion.id}
+                className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden hover:bg-white/10 hover:scale-[1.02] hover:shadow-2xl transition-all duration-300 group"
+              >
+                {/* Header with gradient */}
+                <div className={`bg-gradient-to-r ${config.bg} p-4`}>
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <span className="text-3xl font-bold text-white">#{habitacion.numero}</span>
+                    </div>
+                    <span className="px-3 py-1 rounded-full bg-white/20 text-white text-sm font-medium">
+                      {config.icon} {habitacion.estado}
+                    </span>
                   </div>
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-semibold ${getEstadoColor(
-                      habitacion.estado
-                    )}`}
-                  >
-                    {habitacion.estado}
-                  </span>
+                  <p className="text-white/80 text-sm mt-1">{habitacion.tipo}</p>
                 </div>
 
-                <div className="space-y-2 mb-4">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Por Hora:</span>
-                    <span className="font-semibold">${habitacion.precio_hora}</span>
+                {/* Content */}
+                <div className="p-4">
+                  <div className="space-y-3 mb-4">
+                    <div className="flex justify-between items-center p-2 rounded-lg bg-white/5">
+                      <span className="text-slate-400 text-sm">🕐 Por Hora</span>
+                      <span className="font-bold text-white">${habitacion.precio_hora}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-2 rounded-lg bg-white/5">
+                      <span className="text-slate-400 text-sm">🌙 Por Noche</span>
+                      <span className="font-bold text-white">${habitacion.precio_noche}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-2 rounded-lg bg-white/5">
+                      <span className="text-slate-400 text-sm">👥 Capacidad</span>
+                      <span className="font-bold text-white">{habitacion.capacidad} personas</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Por Noche:</span>
-                    <span className="font-semibold">${habitacion.precio_noche}</span>
+
+                  {habitacion.descripcion && (
+                    <p className="text-slate-400 text-sm mb-4 line-clamp-2">{habitacion.descripcion}</p>
+                  )}
+
+                  {/* Acciones */}
+                  <div className="border-t border-white/10 pt-4">
+                    <p className="text-xs text-slate-500 mb-2">Cambiar estado:</p>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {habitacion.estado !== 'Disponible' && (
+                        <button
+                          onClick={() => cambiarEstado(habitacion.id, 'Disponible')}
+                          className="px-2.5 py-1.5 bg-green-500/20 text-green-400 rounded-lg text-xs hover:bg-green-500/40 transition-all"
+                        >
+                          ✓ Disponible
+                        </button>
+                      )}
+                      {habitacion.estado !== 'Limpieza' && habitacion.estado !== 'Ocupada' && (
+                        <button
+                          onClick={() => cambiarEstado(habitacion.id, 'Limpieza')}
+                          className="px-2.5 py-1.5 bg-yellow-500/20 text-yellow-400 rounded-lg text-xs hover:bg-yellow-500/40 transition-all"
+                        >
+                          🧹 Limpieza
+                        </button>
+                      )}
+                      {habitacion.estado !== 'Mantenimiento' && habitacion.estado !== 'Ocupada' && (
+                        <button
+                          onClick={() => cambiarEstado(habitacion.id, 'Mantenimiento')}
+                          className="px-2.5 py-1.5 bg-gray-500/20 text-gray-400 rounded-lg text-xs hover:bg-gray-500/40 transition-all"
+                        >
+                          🔧 Mantenimiento
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Capacidad:</span>
-                    <span className="font-semibold">{habitacion.capacidad} personas</span>
-                  </div>
+
+                  {/* Botón Check-in */}
+                  {habitacion.estado === 'Disponible' && (
+                    <Link
+                      href={`/reservas/nueva?habitacion=${habitacion.id}`}
+                      className="mt-4 block w-full text-center px-4 py-2.5 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl font-medium hover:from-blue-600 hover:to-purple-600 transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/25"
+                    >
+                      ✅ Hacer Check-in
+                    </Link>
+                  )}
                 </div>
-
-                {habitacion.descripcion && (
-                  <p className="text-sm text-gray-600 mb-4">{habitacion.descripcion}</p>
-                )}
-
-                {/* Acciones */}
-                <div className="border-t pt-4">
-                  <p className="text-xs text-gray-500 mb-2">Cambiar estado:</p>
-                  <div className="flex gap-2 flex-wrap">
-                    {habitacion.estado !== 'Disponible' && (
-                      <button
-                        onClick={() => cambiarEstado(habitacion.id, 'Disponible')}
-                        className="px-3 py-1 bg-green-100 text-green-700 rounded text-sm hover:bg-green-200 transition"
-                      >
-                        Disponible
-                      </button>
-                    )}
-                    {habitacion.estado !== 'Limpieza' && habitacion.estado !== 'Ocupada' && (
-                      <button
-                        onClick={() => cambiarEstado(habitacion.id, 'Limpieza')}
-                        className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded text-sm hover:bg-yellow-200 transition"
-                      >
-                        Limpieza
-                      </button>
-                    )}
-                    {habitacion.estado !== 'Mantenimiento' && habitacion.estado !== 'Ocupada' && (
-                      <button
-                        onClick={() => cambiarEstado(habitacion.id, 'Mantenimiento')}
-                        className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 transition"
-                      >
-                        Mantenimiento
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Botón Check-in */}
-                {habitacion.estado === 'Disponible' && (
-                  <Link
-                    href={`/reservas/nueva?habitacion=${habitacion.id}`}
-                    className="mt-4 block w-full text-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                  >
-                    Hacer Check-in
-                  </Link>
-                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {habitaciones.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No hay habitaciones con este estado</p>
+          <div className="text-center py-16">
+            <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-4xl">🏠</span>
+            </div>
+            <p className="text-slate-400 text-lg">No hay habitaciones con este estado</p>
+            <p className="text-slate-500 text-sm mt-1">Intenta cambiar el filtro para ver más resultados</p>
           </div>
         )}
       </main>
