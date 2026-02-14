@@ -109,6 +109,18 @@ export default function DashboardPage() {
                 📋 Habitaciones
               </button>
               <button
+                onClick={() => router.push('/tipos-estadia')}
+                className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 transition-colors text-gray-700 hover:text-blue-600 font-medium"
+              >
+                🏨 Tipos de Estadía
+              </button>
+              <button
+                onClick={() => router.push('/clientes')}
+                className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 transition-colors text-gray-700 hover:text-blue-600 font-medium"
+              >
+                👤 Clientes / Huéspedes
+              </button>
+              <button
                 onClick={() => router.push('/estadias')}
                 className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 transition-colors text-gray-700 hover:text-blue-600 font-medium"
               >

@@ -90,8 +90,30 @@ END
 GO
 
 -- ============================================================================
+-- TABLA: TiposEstadia
+-- Descripción: Catálogo de tipos de estadía con precios
+-- ============================================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'TiposEstadia')
+BEGIN
+    CREATE TABLE TiposEstadia (
+        id INT PRIMARY KEY IDENTITY(1,1),
+        nombre VARCHAR(50) NOT NULL UNIQUE,
+        descripcion NVARCHAR(MAX),
+        duracion_horas INT NOT NULL CHECK (duracion_horas > 0),
+        precio DECIMAL(10,2) NOT NULL CHECK (precio > 0),
+        precio_adicional DECIMAL(10,2) DEFAULT 0, -- Precio por hora adicional
+        activo BIT DEFAULT 1,
+        es_paquete BIT DEFAULT 0, -- Si es un paquete especial
+        orden INT DEFAULT 0, -- Para排序
+        fecha_creacion DATETIME2 DEFAULT GETDATE()
+    );
+    PRINT '✅ Tabla TiposEstadia creada';
+END
+GO
+
+-- ============================================================================
 -- TABLA: Clientes
--- Descripción: Almacena información de los clientes del motel
+-- Descripción: Almacena información de los clientes del motel (huéspedes)
 -- ============================================================================
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Clientes')
 BEGIN
@@ -104,7 +126,15 @@ BEGIN
         telefono VARCHAR(20),
         email VARCHAR(100),
         direccion NVARCHAR(MAX),
-        fecha_registro DATETIME2 DEFAULT GETDATE()
+        -- Datos de facturación (nuevos)
+        rif VARCHAR(20), -- RIF del cliente para facturación
+        razon_social VARCHAR(200), -- Razón social para facturas
+        direccion_fiscal NVARCHAR(MAX), -- Dirección para factura
+        telefono_facturacion VARCHAR(20),
+        -- Historial
+        fecha_registro DATETIME2 DEFAULT GETDATE(),
+        ultima_visita DATETIME2,
+        total_visitas INT DEFAULT 0
     );
     PRINT '✅ Tabla Clientes creada';
 END
@@ -223,6 +253,15 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_usuarios_username')
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_logaccesos_usuario')
     CREATE INDEX idx_logaccesos_usuario ON LogAccesos(usuario_id);
 
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_tipos_estadia_activo')
+    CREATE INDEX idx_tipos_estadia_activo ON TiposEstadia(activo);
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_clientes_documento')
+    CREATE INDEX idx_clientes_documento ON Clientes(documento);
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_clientes_rif')
+    CREATE INDEX idx_clientes_rif ON Clientes(rif);
+
 PRINT '✅ Índices creados';
 GO
 
@@ -318,6 +357,22 @@ END
 GO
 
 -- Verificar si ya existen datos
+IF NOT EXISTS (SELECT * FROM TiposEstadia)
+BEGIN
+    -- Tipos de Estadía
+    INSERT INTO TiposEstadia (nombre, descripcion, duracion_horas, precio, precio_adicional, activo, orden)
+    VALUES
+        ('Hora', 'Estadía por una hora', 1, 15.00, 10.00, 1, 1),
+        ('2 Horas', 'Estadía por dos horas', 2, 25.00, 10.00, 1, 2),
+        ('3 Horas', 'Estadía por tres horas', 3, 35.00, 10.00, 1, 3),
+        ('Pernocta', 'Estadía hasta las 12:00 PM', 12, 70.00, 10.00, 1, 4),
+        ('Día Completo', 'Estadía de 24 horas', 24, 120.00, 10.00, 1, 5),
+        ('Paquete Noche', 'Paquete especial de fin de semana', 10, 90.00, 15.00, 1, 6);
+    
+    PRINT '✅ Tipos de estadía de ejemplo insertados';
+END
+GO
+
 IF NOT EXISTS (SELECT * FROM Habitaciones)
 BEGIN
     -- Habitaciones
