@@ -547,14 +547,16 @@ export default function LobbyPage() {
                             </span>
                           )}
                           
-                          {/* Timer for Mantenimiento */}
-                          {habitacion.estado === 'Mantenimiento' && historialActivo && (
-                            <div className="mt-2 p-2 bg-yellow-500/20 rounded-lg">
-                              <div className="text-xs text-yellow-300 mb-1">⏱️ En mantenimiento</div>
-                              <div className="text-xl font-mono font-bold text-yellow-400">
+                          {/* Timer for Mantenimiento/Limpieza */}
+                          {(habitacion.estado === 'Mantenimiento' || habitacion.estado === 'Limpieza') && historialActivo && (
+                            <div className={`mt-2 p-2 rounded-lg ${habitacion.estado === 'Mantenimiento' ? 'bg-yellow-500/20' : 'bg-blue-500/20'}`}>
+                              <div className={`text-xs ${habitacion.estado === 'Mantenimiento' ? 'text-yellow-300' : 'text-blue-300'} mb-1`}>
+                                {habitacion.estado === 'Mantenimiento' ? '⏱️ En mantenimiento' : '🧹 En limpieza'}
+                              </div>
+                              <div className={`text-xl font-mono font-bold ${habitacion.estado === 'Mantenimiento' ? 'text-yellow-400' : 'text-blue-400'}`}>
                                 {getElapsedTime(historialActivo.fecha_inicio)}
                               </div>
-                              <div className="text-xs text-yellow-300 mt-1">
+                              <div className={`text-xs mt-1 ${habitacion.estado === 'Mantenimiento' ? 'text-yellow-300' : 'text-blue-300'}`}>
                                 Inicio: {new Date(historialActivo.fecha_inicio).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
                               </div>
                             </div>
