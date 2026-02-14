@@ -15,6 +15,8 @@ Complete motel management system with authentication, dashboard, room management
 - [x] API endpoint `/api/db-status` for connection verification
 - [x] Login page shows real-time database connection status
 - [x] Dashboard shows database connection indicator in header
+- [x] **Fix Login Redirect Race Condition** - Dashboard now waits for auth check before redirecting
+- [x] Added `loadingAuth` state to prevent premature redirect to login page
 - [x] **Usuarios y Permisos implemented** - CRUD for users with roles (Admin, Recepcionista, Gerente)
 - [x] API routes: `/api/usuarios` (GET, POST), `/api/usuarios/[id]` (GET, PUT, DELETE)
 - [x] UI Page: `/usuarios` with user management interface
@@ -85,6 +87,7 @@ SQL Server connection with status monitoring:
 
 | Date | Changes |
 |------|---------|
+| 2025-02-14 | **Fix Login Redirect** - Added loadingAuth state to prevent race condition between localStorage load and redirect |
 | 2025-02-14 | **UI/UX Visual Improvements** - Modern dark theme with glassmorphism, sidebar navigation, gradient cards, animations |
 | 2025-02-14 | **Impresoras Fiscales** - Configuración de impresoras (Fiscal, No Fiscal, Ticketera) |
 | 2025-02-14 | **Configuración del Motel** - Configuración general (nombre, dirección, horarios, impuestos, colores) |
