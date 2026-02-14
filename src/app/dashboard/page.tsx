@@ -32,6 +32,18 @@ interface StatCardProps {
   gradient: string;
 }
 
+interface ActividadReciente {
+  id: number;
+  tipo: string;
+  titulo: string;
+  descripcion: string;
+  hora: string;
+  habitacion_numero: string;
+  fecha_salida: string;
+  cliente_nombre: string;
+  cliente_apellido: string;
+}
+
 interface ActivityItemProps {
   icon: string;
   title: string;
@@ -138,6 +150,8 @@ export default function DashboardPage() {
   });
   const [dbConnected, setDbConnected] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [habitacionesPorVencer, setHabitacionesPorVencer] = useState<ActividadReciente[]>([]);
+  const [loadingHabitaciones, setLoadingHabitaciones] = useState(true);
 
   useEffect(() => {
     const checkDbConnection = async () => {
@@ -150,6 +164,28 @@ export default function DashboardPage() {
       }
     };
     checkDbConnection();
+  }, []);
+
+  // Cargar habitaciones por vencer
+  useEffect(() => {
+    const cargarHabitacionesPorVencer = async () => {
+      try {
+        const response = await fetch('/api/reservas?por_vencer=true');
+        const result = await response.json();
+        if (result.success) {
+          setHabitacionesPorVencer(result.data);
+        }
+      } catch (error) {
+        console.error('Error cargando habitaciones por vencer:', error);
+      } finally {
+        setLoadingHabitaciones(false);
+      }
+    };
+
+    cargarHabitacionesPorVencer();
+    // Actualizar cada 30 segundos
+    const interval = setInterval(cargarHabitacionesPorVencer, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -256,7 +292,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             <StatCard
               title="Habitaciones Disponibles"
               value="12"
@@ -274,21 +310,77 @@ export default function DashboardPage() {
               gradient="from-blue-500 to-cyan-600"
             />
             <StatCard
-              title="Reservas Hoy"
-              value="5"
-              icon="📅"
-              trend="+3 nuevas"
-              trendUp={true}
-              gradient="from-purple-500 to-violet-600"
+              title="Por Vencer (5 min)"
+              value="2"
+              icon="⏰"
+              trend="Requiere atención"
+              trendUp={false}
+              gradient="from-red-500 to-orange-600"
             />
-            <StatCard
-              title="Ingresos del Día"
-              value="$2,450"
-              icon="💰"
-              trend="+12% vs ayer"
-              trendUp={true}
-              gradient="from-amber-500 to-orange-600"
-            />
+          </div>
+
+          {/* Habitaciones Por Vencer */}
+          <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden mb-6">
+            <div className="px-6 py-4 border-b border-white/10 bg-gradient-to-r from-red-600/20 to-orange-600/20">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <span className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></span>
+                ⏰ Habitaciones por Vencer (menos de 5 min)
+              </h3>
+            </div>
+            <div className="p-6">
+              {loadingHabitaciones ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-400 mx-auto mb-3"></div>
+                  <p className="text-slate-400">Cargando...</p>
+                </div>
+              ) : habitacionesPorVencer.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-3">✅</div>
+                  <p className="text-green-400 font-medium">No hay habitaciones por vencer</p>
+                  <p className="text-slate-500 text-sm">Todas las habitaciones están fuera de peligro</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {habitacionesPorVencer.map((reserva) => {
+                    const fechaSalida = new Date(reserva.fecha_salida);
+                    const ahora = new Date();
+                    const minutosRestantes = Math.floor((fechaSalida.getTime() - ahora.getTime()) / 60000);
+                    
+                    return (
+                      <div 
+                        key={reserva.id}
+                        className="bg-gradient-to-br from-red-500/20 to-orange-500/20 rounded-xl border border-red-500/30 p-4 hover:scale-[1.02] hover:shadow-xl transition-all duration-300"
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl font-bold text-white">#{reserva.habitacion_numero}</span>
+                          </div>
+                          <span className="px-3 py-1 rounded-full bg-red-500/30 text-red-300 text-sm font-medium animate-pulse">
+                            ⏰ {minutosRestantes} min
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-slate-300">
+                            <span>👤</span>
+                            <span className="font-medium">{reserva.cliente_nombre} {reserva.cliente_apellido}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-slate-400 text-sm">
+                            <span>🕐</span>
+                            <span>Salida: {fechaSalida.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => router.push(`/reservas/${reserva.id}`)}
+                          className="mt-3 w-full py-2 rounded-lg bg-red-500/30 hover:bg-red-500/50 text-red-300 font-medium transition-colors"
+                        >
+                          Atender
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Recent Activity */}

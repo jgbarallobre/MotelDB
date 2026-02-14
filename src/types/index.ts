@@ -9,6 +9,7 @@ export interface Habitacion {
   estado: 'Disponible' | 'Ocupada' | 'Mantenimiento' | 'Limpieza';
   descripcion?: string;
   capacidad: number;
+  activa?: boolean;
   fecha_creacion: Date;
   fecha_actualizacion: Date;
 }
@@ -40,6 +41,12 @@ export interface Reserva {
   // Datos relacionados
   habitacion?: Habitacion;
   cliente?: Cliente;
+  // Campos del JOIN
+  habitacion_numero?: string;
+  habitacion_tipo?: string;
+  cliente_nombre?: string;
+  cliente_apellido?: string;
+  cliente_documento?: string;
 }
 
 export interface Pago {

@@ -42,7 +42,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { numero, tipo, precio_hora, precio_noche, capacidad, descripcion, estado } = body;
+    const { numero, tipo, precio_hora, precio_noche, capacidad, descripcion, estado, activa } = body;
     
     const pool = await getConnection();
     const result = await pool.request()
@@ -54,6 +54,7 @@ export async function PUT(
       .input('capacidad', capacidad)
       .input('descripcion', descripcion)
       .input('estado', estado)
+      .input('activa', activa === true || activa === 1 || activa === 'true' ? 1 : 0)
       .query(`
         UPDATE Habitaciones
         SET numero = @numero,
@@ -63,6 +64,7 @@ export async function PUT(
             capacidad = @capacidad,
             descripcion = @descripcion,
             estado = @estado,
+            activa = @activa,
             fecha_actualizacion = GETDATE()
         OUTPUT INSERTED.*
         WHERE id = @id
@@ -96,26 +98,36 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { estado } = body;
+    const { estado, activa } = body;
     
-    if (!estado) {
+    if (!estado && activa === undefined) {
       return NextResponse.json(
-        { success: false, error: 'Estado requerido' },
+        { success: false, error: 'Estado o activa requerido' },
         { status: 400 }
       );
     }
     
+    let query = 'UPDATE Habitaciones SET ';
+    const updates: string[] = [];
     const pool = await getConnection();
-    const result = await pool.request()
-      .input('id', id)
-      .input('estado', estado)
-      .query(`
-        UPDATE Habitaciones
-        SET estado = @estado,
-            fecha_actualizacion = GETDATE()
-        OUTPUT INSERTED.*
-        WHERE id = @id
-      `);
+    const request_db = pool.request();
+    
+    if (estado) {
+      updates.push('estado = @estado');
+      request_db.input('estado', estado);
+    }
+    
+    if (activa !== undefined) {
+      updates.push('activa = @activa');
+      request_db.input('activa', activa === true || activa === 1 || activa === 'true' ? 1 : 0);
+    }
+    
+    query += updates.join(', ');
+    query += ', fecha_actualizacion = GETDATE() OUTPUT INSERTED.* WHERE id = @id';
+    
+    request_db.input('id', id);
+    
+    const result = await request_db.query(query);
     
     if (result.recordset.length === 0) {
       return NextResponse.json(

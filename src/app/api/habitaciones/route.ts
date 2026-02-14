@@ -7,12 +7,18 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const estado = searchParams.get('estado');
+    const activa = searchParams.get('activa');
     
     const pool = await getConnection();
-    let query = 'SELECT * FROM Habitaciones';
+    let query = 'SELECT * FROM Habitaciones WHERE 1=1';
     
     if (estado) {
-      query += ' WHERE estado = @estado';
+      query += ' AND estado = @estado';
+    }
+    
+    // Filtro por activa (si no se especifica, muestra todas)
+    if (activa !== null && activa !== undefined) {
+      query += ' AND activa = @activa';
     }
     
     query += ' ORDER BY numero';
@@ -20,6 +26,9 @@ export async function GET(request: Request) {
     const request_db = pool.request();
     if (estado) {
       request_db.input('estado', estado);
+    }
+    if (activa !== null && activa !== undefined) {
+      request_db.input('activa', activa === 'true' ? 1 : 0);
     }
     
     const result = await request_db.query(query);
@@ -41,7 +50,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { numero, tipo, precio_hora, precio_noche, capacidad, descripcion } = body;
+    const { numero, tipo, precio_hora, precio_noche, capacidad, descripcion, activa } = body;
     
     if (!numero || !tipo || !precio_hora || !precio_noche || !capacidad) {
       return NextResponse.json(
@@ -58,10 +67,11 @@ export async function POST(request: Request) {
       .input('precio_noche', precio_noche)
       .input('capacidad', capacidad)
       .input('descripcion', descripcion || null)
+      .input('activa', activa !== false ? 1 : 0)
       .query(`
-        INSERT INTO Habitaciones (numero, tipo, precio_hora, precio_noche, capacidad, descripcion)
+        INSERT INTO Habitaciones (numero, tipo, precio_hora, precio_noche, capacidad, descripcion, activa)
         OUTPUT INSERTED.*
-        VALUES (@numero, @tipo, @precio_hora, @precio_noche, @capacidad, @descripcion)
+        VALUES (@numero, @tipo, @precio_hora, @precio_noche, @capacidad, @descripcion, @activa)
       `);
     
     return NextResponse.json({

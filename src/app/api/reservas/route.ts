@@ -8,6 +8,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const estado = searchParams.get('estado');
     const habitacion_id = searchParams.get('habitacion_id');
+    const por_vencer = searchParams.get('por_vencer');
     
     const pool = await getConnection();
     let query = `
@@ -36,7 +37,16 @@ export async function GET(request: Request) {
       request_db.input('habitacion_id', habitacion_id);
     }
     
-    query += ' ORDER BY r.fecha_entrada DESC';
+    // Filtro para habitaciones por vencer (menos de 5 minutos)
+    if (por_vencer === 'true') {
+      query += ` AND r.estado = 'Activa' 
+                AND r.fecha_salida IS NOT NULL
+                AND DATEDIFF(MINUTE, GETDATE(), r.fecha_salida) <= 5
+                AND DATEDIFF(MINUTE, GETDATE(), r.fecha_salida) > 0`;
+      query += ' ORDER BY r.fecha_salida ASC';
+    } else {
+      query += ' ORDER BY r.fecha_entrada DESC';
+    }
     
     const result = await request_db.query(query);
     

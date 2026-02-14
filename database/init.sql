@@ -172,6 +172,7 @@ BEGIN
         estado VARCHAR(20) NOT NULL DEFAULT 'Disponible' CHECK (estado IN ('Disponible', 'Ocupada', 'Mantenimiento', 'Limpieza')),
         descripcion NVARCHAR(MAX),
         capacidad INT NOT NULL CHECK (capacidad > 0),
+        activa BIT DEFAULT 1, -- Para habilitar/deshabilitar habitaciones
         fecha_creacion DATETIME2 DEFAULT GETDATE(),
         fecha_actualizacion DATETIME2 DEFAULT GETDATE()
     );

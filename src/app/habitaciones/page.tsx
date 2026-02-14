@@ -1,25 +1,41 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { Habitacion } from '@/types';
 
+interface FormData {
+  numero: string;
+  descripcion: string;
+  activa: boolean;
+}
+
 export default function HabitacionesPage() {
   const router = useRouter();
   const [habitaciones, setHabitaciones] = useState<Habitacion[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filtroEstado, setFiltroEstado] = useState<string>('');
+  const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [formData, setFormData] = useState<FormData>({
+    numero: '',
+    descripcion: '',
+    activa: true
+  });
+  const [filtroActiva, setFiltroActiva] = useState<string>('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchHabitaciones();
-  }, [filtroEstado]);
+  }, [filtroActiva]);
 
   const fetchHabitaciones = async () => {
     try {
-      const url = filtroEstado
-        ? `/api/habitaciones?estado=${filtroEstado}`
-        : '/api/habitaciones';
+      let url = '/api/habitaciones';
+      if (filtroActiva !== '') {
+        url += `?activa=${filtroActiva}`;
+      }
       const response = await fetch(url);
       const result = await response.json();
       if (result.success) {
@@ -32,12 +48,86 @@ export default function HabitacionesPage() {
     }
   };
 
-  const cambiarEstado = async (id: number, nuevoEstado: string) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSaving(true);
+
+    try {
+      const method = editingId ? 'PUT' : 'POST';
+      const url = editingId 
+        ? `/api/habitaciones/${editingId}`
+        : '/api/habitaciones';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          numero: formData.numero,
+          descripcion: formData.descripcion,
+          activa: formData.activa,
+          // Campos requeridos por la API - valores por defecto
+          tipo: 'Standard',
+          precio_hora: 50,
+          precio_noche: 150,
+          capacidad: 2,
+          estado: 'Disponible'
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setShowModal(false);
+        setEditingId(null);
+        setFormData({ numero: '', descripcion: '', activa: true });
+        fetchHabitaciones();
+      } else {
+        setError(result.error || 'Error al guardar');
+      }
+    } catch (error) {
+      setError('Error al guardar habitación');
+      console.error(error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEdit = (habitacion: Habitacion) => {
+    setEditingId(habitacion.id);
+    setFormData({
+      numero: habitacion.numero,
+      descripcion: habitacion.descripcion || '',
+      activa: habitacion.activa !== false
+    });
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('¿Estás seguro de eliminar esta habitación?')) return;
+
     try {
       const response = await fetch(`/api/habitaciones/${id}`, {
+        method: 'DELETE'
+      });
+      const result = await response.json();
+      if (result.success) {
+        fetchHabitaciones();
+      } else {
+        alert(result.error || 'Error al eliminar');
+      }
+    } catch (error) {
+      console.error('Error eliminando habitación:', error);
+    }
+  };
+
+  const toggleActiva = async (habitacion: Habitacion) => {
+    try {
+      const nuevaActiva = !habitacion.activa;
+      const response = await fetch(`/api/habitaciones/${habitacion.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado: nuevoEstado })
+        body: JSON.stringify({ activa: nuevaActiva })
       });
 
       if (response.ok) {
@@ -48,57 +138,17 @@ export default function HabitacionesPage() {
     }
   };
 
-  const getEstadoConfig = (estado: string) => {
-    switch (estado) {
-      case 'Disponible':
-        return { 
-          bg: 'from-green-500 to-emerald-600', 
-          text: 'text-green-400',
-          bgLight: 'bg-green-500/10',
-          border: 'border-green-500/20',
-          icon: '✓'
-        };
-      case 'Ocupada':
-        return { 
-          bg: 'from-red-500 to-rose-600', 
-          text: 'text-red-400',
-          bgLight: 'bg-red-500/10',
-          border: 'border-red-500/20',
-          icon: '🔒'
-        };
-      case 'Limpieza':
-        return { 
-          bg: 'from-yellow-500 to-amber-600', 
-          text: 'text-yellow-400',
-          bgLight: 'bg-yellow-500/10',
-          border: 'border-yellow-500/20',
-          icon: '🧹'
-        };
-      case 'Mantenimiento':
-        return { 
-          bg: 'from-gray-500 to-slate-600', 
-          text: 'text-gray-400',
-          bgLight: 'bg-gray-500/10',
-          border: 'border-gray-500/20',
-          icon: '🔧'
-        };
-      default:
-        return { 
-          bg: 'from-gray-500 to-slate-600', 
-          text: 'text-gray-400',
-          bgLight: 'bg-gray-500/10',
-          border: 'border-gray-500/20',
-          icon: '?'
-        };
-    }
+  const openNewModal = () => {
+    setEditingId(null);
+    setFormData({ numero: '', descripcion: '', activa: true });
+    setError('');
+    setShowModal(true);
   };
 
   const filtros = [
-    { estado: '', label: 'Todas', color: 'from-slate-500 to-slate-600' },
-    { estado: 'Disponible', label: 'Disponibles', color: 'from-green-500 to-emerald-600' },
-    { estado: 'Ocupada', label: 'Ocupadas', color: 'from-red-500 to-rose-600' },
-    { estado: 'Limpieza', label: 'En Limpieza', color: 'from-yellow-500 to-amber-600' },
-    { estado: 'Mantenimiento', label: 'Mantenimiento', color: 'from-gray-500 to-slate-600' },
+    { value: '', label: 'Todas' },
+    { value: 'true', label: 'Activas' },
+    { value: 'false', label: 'Inactivas' },
   ];
 
   if (loading) {
@@ -129,13 +179,16 @@ export default function HabitacionesPage() {
                 <span className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-2xl">
                   🏠
                 </span>
-                Gestión de Habitaciones
+                Maestro de Habitaciones
               </h1>
+              <p className="text-slate-400 mt-1">Gestiona las habitaciones del motel</p>
             </div>
-            <div className="text-right">
-              <p className="text-slate-400 text-sm">Total de habitaciones</p>
-              <p className="text-2xl font-bold text-white">{habitaciones.length}</p>
-            </div>
+            <button
+              onClick={openNewModal}
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
+            >
+              <span>+</span> Nueva Habitación
+            </button>
           </div>
         </div>
       </header>
@@ -144,122 +197,207 @@ export default function HabitacionesPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Filtros */}
         <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-4 mb-6">
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
+            <span className="text-slate-400 text-sm mr-2">Filtrar:</span>
             {filtros.map((filtro) => (
               <button
-                key={filtro.estado}
-                onClick={() => setFiltroEstado(filtro.estado)}
+                key={filtro.value}
+                onClick={() => setFiltroActiva(filtro.value)}
                 className={`px-4 py-2 rounded-xl transition-all duration-200 font-medium ${
-                  filtroEstado === filtro.estado
-                    ? `bg-gradient-to-r ${filtro.color} text-white shadow-lg`
+                  filtroActiva === filtro.value
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
                     : 'bg-white/10 text-slate-300 hover:bg-white/20'
                 }`}
               >
                 {filtro.label}
               </button>
             ))}
+            <span className="ml-auto text-slate-400 text-sm">
+              Total: {habitaciones.length} habitaciones
+            </span>
           </div>
         </div>
 
-        {/* Grid de Habitaciones */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {habitaciones.map((habitacion) => {
-            const config = getEstadoConfig(habitacion.estado);
-            return (
-              <div
-                key={habitacion.id}
-                className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden hover:bg-white/10 hover:scale-[1.02] hover:shadow-2xl transition-all duration-300 group"
-              >
-                {/* Header with gradient */}
-                <div className={`bg-gradient-to-r ${config.bg} p-4`}>
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <span className="text-3xl font-bold text-white">#{habitacion.numero}</span>
-                    </div>
-                    <span className="px-3 py-1 rounded-full bg-white/20 text-white text-sm font-medium">
-                      {config.icon} {habitacion.estado}
-                    </span>
-                  </div>
-                  <p className="text-white/80 text-sm mt-1">{habitacion.tipo}</p>
+        {/* Tabla de Habitaciones */}
+        <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-white/5">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Número
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Descripción
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Estado
+                  </th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/10">
+                {habitaciones.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-12 text-center">
+                      <div className="text-slate-400">
+                        <span className="text-4xl block mb-2">🏠</span>
+                        No hay habitaciones registradas
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  habitaciones.map((habitacion) => (
+                    <tr 
+                      key={habitacion.id} 
+                      className="hover:bg-white/5 transition-colors"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-xl font-bold text-white">
+                          #{habitacion.numero}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-slate-300">
+                          {habitacion.descripcion || 'Sin descripción'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <button
+                          onClick={() => toggleActiva(habitacion)}
+                          className={`inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm transition-all ${
+                            habitacion.activa !== false
+                              ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                              : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                          }`}
+                        >
+                          <span className={`w-2 h-2 rounded-full ${
+                            habitacion.activa !== false ? 'bg-green-400' : 'bg-red-400'
+                          }`}></span>
+                          {habitacion.activa !== false ? 'Activa' : 'Inactiva'}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 text-right whitespace-nowrap">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => handleEdit(habitacion)}
+                            className="p-2 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
+                            title="Editar"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(habitacion.id)}
+                            className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+                            title="Eliminar"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-2xl border border-white/10 w-full max-w-md shadow-2xl">
+            <div className="px-6 py-4 border-b border-white/10">
+              <h2 className="text-xl font-bold text-white">
+                {editingId ? 'Editar Habitación' : 'Nueva Habitación'}
+              </h2>
+            </div>
+            <form onSubmit={handleSubmit} className="p-6">
+              {error && (
+                <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 text-sm">
+                  {error}
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Número de Habitación *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.numero}
+                    onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ej: 101, 102, A1..."
+                    required
+                  />
                 </div>
 
-                {/* Content */}
-                <div className="p-4">
-                  <div className="space-y-3 mb-4">
-                    <div className="flex justify-between items-center p-2 rounded-lg bg-white/5">
-                      <span className="text-slate-400 text-sm">🕐 Por Hora</span>
-                      <span className="font-bold text-white">${habitacion.precio_hora}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-2 rounded-lg bg-white/5">
-                      <span className="text-slate-400 text-sm">🌙 Por Noche</span>
-                      <span className="font-bold text-white">${habitacion.precio_noche}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-2 rounded-lg bg-white/5">
-                      <span className="text-slate-400 text-sm">👥 Capacidad</span>
-                      <span className="font-bold text-white">{habitacion.capacidad} personas</span>
-                    </div>
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Descripción
+                  </label>
+                  <textarea
+                    value={formData.descripcion}
+                    onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    placeholder="Descripción de la habitación..."
+                    rows={3}
+                  />
+                </div>
 
-                  {habitacion.descripcion && (
-                    <p className="text-slate-400 text-sm mb-4 line-clamp-2">{habitacion.descripcion}</p>
-                  )}
-
-                  {/* Acciones */}
-                  <div className="border-t border-white/10 pt-4">
-                    <p className="text-xs text-slate-500 mb-2">Cambiar estado:</p>
-                    <div className="flex gap-1.5 flex-wrap">
-                      {habitacion.estado !== 'Disponible' && (
-                        <button
-                          onClick={() => cambiarEstado(habitacion.id, 'Disponible')}
-                          className="px-2.5 py-1.5 bg-green-500/20 text-green-400 rounded-lg text-xs hover:bg-green-500/40 transition-all"
-                        >
-                          ✓ Disponible
-                        </button>
-                      )}
-                      {habitacion.estado !== 'Limpieza' && habitacion.estado !== 'Ocupada' && (
-                        <button
-                          onClick={() => cambiarEstado(habitacion.id, 'Limpieza')}
-                          className="px-2.5 py-1.5 bg-yellow-500/20 text-yellow-400 rounded-lg text-xs hover:bg-yellow-500/40 transition-all"
-                        >
-                          🧹 Limpieza
-                        </button>
-                      )}
-                      {habitacion.estado !== 'Mantenimiento' && habitacion.estado !== 'Ocupada' && (
-                        <button
-                          onClick={() => cambiarEstado(habitacion.id, 'Mantenimiento')}
-                          className="px-2.5 py-1.5 bg-gray-500/20 text-gray-400 rounded-lg text-xs hover:bg-gray-500/40 transition-all"
-                        >
-                          🔧 Mantenimiento
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Botón Check-in */}
-                  {habitacion.estado === 'Disponible' && (
-                    <Link
-                      href={`/reservas/nueva?habitacion=${habitacion.id}`}
-                      className="mt-4 block w-full text-center px-4 py-2.5 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl font-medium hover:from-blue-600 hover:to-purple-600 transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/25"
-                    >
-                      ✅ Hacer Check-in
-                    </Link>
-                  )}
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, activa: !formData.activa })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      formData.activa ? 'bg-green-500' : 'bg-red-500'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        formData.activa ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                  <span className="text-sm font-medium text-slate-300">
+                    {formData.activa ? 'Habitación Activa' : 'Habitación Inactiva'}
+                  </span>
                 </div>
               </div>
-            );
-          })}
-        </div>
 
-        {habitaciones.length === 0 && (
-          <div className="text-center py-16">
-            <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-4xl">🏠</span>
-            </div>
-            <p className="text-slate-400 text-lg">No hay habitaciones con este estado</p>
-            <p className="text-slate-500 text-sm mt-1">Intenta cambiar el filtro para ver más resultados</p>
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowModal(false);
+                    setEditingId(null);
+                    setError('');
+                  }}
+                  className="flex-1 px-4 py-3 bg-white/10 text-slate-300 rounded-xl hover:bg-white/20 transition-colors font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {saving ? 'Guardando...' : editingId ? 'Actualizar' : 'Crear'}
+                </button>
+              </div>
+            </form>
           </div>
-        )}
-      </main>
+        </div>
+      )}
     </div>
   );
 }
