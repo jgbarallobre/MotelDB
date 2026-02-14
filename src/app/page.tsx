@@ -19,7 +19,9 @@ interface Habitacion {
   numero: string;
   tipo: string;
   precio_hora: number;
+  precio_noche: number;
   estado: string;
+  activa: boolean;
 }
 
 export default function Home() {
@@ -28,6 +30,8 @@ export default function Home() {
   const [habitaciones, setHabitaciones] = useState<Habitacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [reservasActivas, setReservasActivas] = useState<any[]>([]);
+  const [processingId, setProcessingId] = useState<number | null>(null);
 
   useEffect(() => {
     // Verificar autenticación
@@ -40,7 +44,20 @@ export default function Home() {
     
     fetchDashboard();
     fetchHabitaciones();
+    fetchReservasActivas();
   }, [router]);
+
+  const fetchReservasActivas = async () => {
+    try {
+      const response = await fetch('/api/reservas?estado=activa');
+      const result = await response.json();
+      if (result.success) {
+        setReservasActivas(result.data);
+      }
+    } catch (error) {
+      console.error('Error cargando reservas activas:', error);
+    }
+  };
 
   const fetchDashboard = async () => {
     try {
@@ -95,6 +112,76 @@ export default function Home() {
         return '🧹';
       default:
         return '⚪';
+    }
+  };
+
+  const getReservaActiva = (habitacionId: number) => {
+    return reservasActivas.find(r => r.habitacion_id === habitacionId);
+  };
+
+  const handleCheckIn = (habitacion: Habitacion) => {
+    router.push(`/reservas/nueva?habitacion=${habitacion.id}`);
+  };
+
+  const handleCheckOut = async (habitacionId: number) => {
+    const reserva = getReservaActiva(habitacionId);
+    if (!reserva) {
+      alert('No hay reserva activa para esta habitación');
+      return;
+    }
+    
+    if (!confirm('¿Confirmar check-out de esta habitación?')) {
+      return;
+    }
+    
+    setProcessingId(habitacionId);
+    try {
+      const response = await fetch(`/api/reservas/${reserva.id}/checkout`, {
+        method: 'POST',
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        alert('Check-out realizado con éxito');
+        fetchHabitaciones();
+        fetchReservasActivas();
+        fetchDashboard();
+      } else {
+        alert('Error en check-out: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error en check-out:', error);
+      alert('Error realizando check-out');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleCambiarEstado = async (habitacionId: number, nuevoEstado: string) => {
+    if (!confirm(`¿Cambiar estado a "${nuevoEstado}"?`)) {
+      return;
+    }
+    
+    setProcessingId(habitacionId);
+    try {
+      const response = await fetch(`/api/habitaciones/${habitacionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        fetchHabitaciones();
+        fetchDashboard();
+      } else {
+        alert('Error cambiando estado: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error cambiando estado:', error);
+      alert('Error cambiando estado');
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -190,40 +277,99 @@ export default function Home() {
           <h2 className="text-xl font-bold text-white mb-4">Habitaciones</h2>
           <div className="max-h-[calc(100vh-300px)] overflow-y-auto pr-2 custom-scrollbar">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {habitaciones.map((habitacion) => (
-                <Link
-                  key={habitacion.id}
-                  href={habitacion.estado === 'Disponible' ? `/reservas/nueva?habitacion=${habitacion.id}` : '#'}
-                  className={`
-                    aspect-square rounded-lg p-4 flex flex-col items-center justify-center
-                    transition-all duration-200 border-2
-                    ${habitacion.estado === 'Disponible'
-                      ? 'bg-green-600/20 border-green-500/50 hover:bg-green-600/30 hover:scale-105 cursor-pointer'
-                      : habitacion.estado === 'Ocupada'
-                      ? 'bg-red-600/20 border-red-500/50 cursor-not-allowed'
-                      : habitacion.estado === 'Limpieza'
-                      ? 'bg-blue-600/20 border-blue-500/50 cursor-not-allowed'
-                      : 'bg-yellow-600/20 border-yellow-500/50 cursor-not-allowed'
-                    }
-                  `}
-                >
-                  <div className="text-4xl mb-2">{getEstadoEmoji(habitacion.estado)}</div>
-                  <div className="text-2xl font-bold text-white">{habitacion.numero}</div>
-                  <div className="text-xs text-gray-300 mt-1">{habitacion.tipo}</div>
-                  <div className="text-sm font-semibold text-white mt-2">
-                    ${habitacion.precio_hora}/hr
-                  </div>
-                  <div className={`
-                    text-xs px-2 py-1 rounded-full mt-2
-                    ${habitacion.estado === 'Disponible' ? 'bg-green-500/30 text-green-200' : ''}
-                    ${habitacion.estado === 'Ocupada' ? 'bg-red-500/30 text-red-200' : ''}
-                    ${habitacion.estado === 'Limpieza' ? 'bg-blue-500/30 text-blue-200' : ''}
-                    ${habitacion.estado === 'Mantenimiento' ? 'bg-yellow-500/30 text-yellow-200' : ''}
-                  `}>
-                    {habitacion.estado}
-                  </div>
-                </Link>
-              ))}
+              {habitaciones
+                .filter(h => h.activa !== false)
+                .sort((a, b) => a.numero.localeCompare(b.numero, undefined, { numeric: true }))
+                .map((habitacion) => {
+                  const reserva = getReservaActiva(habitacion.id);
+                  const isProcessing = processingId === habitacion.id;
+                  
+                  return (
+                    <div
+                      key={habitacion.id}
+                      className={`
+                        aspect-square rounded-xl p-3 flex flex-col items-center justify-between
+                        transition-all duration-200 border-2 relative overflow-hidden
+                        ${habitacion.estado === 'Disponible'
+                          ? 'bg-green-600/20 border-green-500/50 hover:border-green-400 hover:scale-105'
+                          : habitacion.estado === 'Ocupada'
+                          ? 'bg-red-600/20 border-red-500/50'
+                          : habitacion.estado === 'Limpieza'
+                          ? 'bg-blue-600/20 border-blue-500/50'
+                          : 'bg-yellow-600/20 border-yellow-500/50'
+                        }
+                      `}
+                    >
+                      {/* Status Icon */}
+                      <div className="text-3xl mb-1">{getEstadoEmoji(habitacion.estado)}</div>
+                      
+                      {/* Room Number */}
+                      <div className="text-2xl font-bold text-white">{habitacion.numero}</div>
+                      <div className="text-xs text-gray-300">{habitacion.tipo}</div>
+                      
+                      {/* Price */}
+                      <div className="text-sm font-semibold text-white">
+                        ${habitacion.precio_hora}/hr
+                      </div>
+                      
+                      {/* Status Badge */}
+                      <div className={`
+                        text-xs px-2 py-0.5 rounded-full
+                        ${habitacion.estado === 'Disponible' ? 'bg-green-500/30 text-green-200' : ''}
+                        ${habitacion.estado === 'Ocupada' ? 'bg-red-500/30 text-red-200' : ''}
+                        ${habitacion.estado === 'Limpieza' ? 'bg-blue-500/30 text-blue-200' : ''}
+                        ${habitacion.estado === 'Mantenimiento' ? 'bg-yellow-500/30 text-yellow-200' : ''}
+                      `}>
+                        {habitacion.estado}
+                      </div>
+                      
+                      {/* Operation Buttons */}
+                      <div className="mt-2 w-full">
+                        {habitacion.estado === 'Disponible' && (
+                          <button
+                            onClick={() => handleCheckIn(habitacion)}
+                            className="w-full py-1.5 px-2 bg-green-600 hover:bg-green-500 text-white text-xs font-medium rounded-lg transition-colors"
+                          >
+                            📥 Check-in
+                          </button>
+                        )}
+                        
+                        {habitacion.estado === 'Ocupada' && (
+                          <button
+                            onClick={() => handleCheckOut(habitacion.id)}
+                            disabled={isProcessing}
+                            className="w-full py-1.5 px-2 bg-red-600 hover:bg-red-500 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            {isProcessing ? '⏳' : '📤'} Check-out
+                          </button>
+                        )}
+                        
+                        {habitacion.estado === 'Limpieza' && (
+                          <button
+                            onClick={() => handleCambiarEstado(habitacion.id, 'Disponible')}
+                            disabled={isProcessing}
+                            className="w-full py-1.5 px-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            {isProcessing ? '⏳' : '✅'} Disponible
+                          </button>
+                        )}
+                        
+                        {habitacion.estado === 'Mantenimiento' && (
+                          <button
+                            onClick={() => handleCambiarEstado(habitacion.id, 'Disponible')}
+                            disabled={isProcessing}
+                            className="w-full py-1.5 px-2 bg-yellow-600 hover:bg-yellow-500 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            {isProcessing ? '⏳' : '🔧'} Liberar
+                          </button>
+                        )}
+                      </div>
+                      
+                      {/* Hover Effect */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 hover:opacity-100 transition-opacity pointer-events-none"></div>
+                    </div>
+                  );
+                })}
             </div>
           </div>
         </div>
