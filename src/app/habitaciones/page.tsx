@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { Habitacion } from '@/types';
 
 interface FormData {
@@ -13,6 +13,7 @@ interface FormData {
 
 export default function HabitacionesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [habitaciones, setHabitaciones] = useState<Habitacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -23,18 +24,34 @@ export default function HabitacionesPage() {
     activa: true
   });
   const [filtroActiva, setFiltroActiva] = useState<string>('');
+  const [filtroEstado, setFiltroEstado] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  // Leer el parámetro de estado de la URL
+  useEffect(() => {
+    const estadoParam = searchParams.get('estado');
+    if (estadoParam) {
+      setFiltroEstado(estadoParam);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     fetchHabitaciones();
-  }, [filtroActiva]);
+  }, [filtroActiva, filtroEstado]);
 
   const fetchHabitaciones = async () => {
     try {
       let url = '/api/habitaciones';
+      const params = new URLSearchParams();
       if (filtroActiva !== '') {
-        url += `?activa=${filtroActiva}`;
+        params.append('activa', filtroActiva);
+      }
+      if (filtroEstado !== '') {
+        params.append('estado', filtroEstado);
+      }
+      if (params.toString()) {
+        url += '?' + params.toString();
       }
       const response = await fetch(url);
       const result = await response.json();
@@ -151,6 +168,14 @@ export default function HabitacionesPage() {
     { value: 'false', label: 'Inactivas' },
   ];
 
+  const filtrosEstado = [
+    { value: '', label: 'Todos los Estados' },
+    { value: 'Disponible', label: '🛏️ Disponible' },
+    { value: 'Ocupada', label: '🔒 Ocupada' },
+    { value: 'Limpieza', label: '🧹 Limpieza' },
+    { value: 'Mantenimiento', label: '🔧 Mantenimiento' },
+  ];
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
@@ -198,7 +223,22 @@ export default function HabitacionesPage() {
         {/* Filtros */}
         <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-4 mb-6">
           <div className="flex gap-2 flex-wrap items-center">
-            <span className="text-slate-400 text-sm mr-2">Filtrar:</span>
+            <span className="text-slate-400 text-sm mr-2">Estado:</span>
+            {filtrosEstado.map((filtro) => (
+              <button
+                key={filtro.value}
+                onClick={() => setFiltroEstado(filtro.value)}
+                className={`px-4 py-2 rounded-xl transition-all duration-200 font-medium ${
+                  filtroEstado === filtro.value
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                    : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                }`}
+              >
+                {filtro.label}
+              </button>
+            ))}
+            <span className="mx-2 text-slate-600">|</span>
+            <span className="text-slate-400 text-sm mr-2">Activa:</span>
             {filtros.map((filtro) => (
               <button
                 key={filtro.value}

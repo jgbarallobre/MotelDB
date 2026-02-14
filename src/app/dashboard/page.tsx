@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import type { Habitacion } from '@/types';
 
 interface User {
   id: number;
@@ -21,6 +22,7 @@ interface MenuSectionProps {
   title: string;
   items: MenuItem[];
   icon: string;
+  onLobbyClick?: () => void;
 }
 
 interface StatCardProps {
@@ -30,6 +32,7 @@ interface StatCardProps {
   trend: string;
   trendUp: boolean | null;
   gradient: string;
+  onClick?: () => void;
 }
 
 interface ActividadReciente {
@@ -64,7 +67,7 @@ const maestroMenu: MenuItem[] = [
 ];
 
 const lobbyMenu: MenuItem[] = [
-  { label: 'Ir al Lobby', icon: '🏨', path: '/lobby', color: 'bg-green-500' },
+  { label: 'Ver Habitaciones', icon: '🏨', path: '/lobby', color: 'bg-green-500' },
   { label: 'Reservas', icon: '📅', path: '/reservas', color: 'bg-emerald-500' },
   { label: 'Nueva Estadía', icon: '✅', path: '/reservas/nueva', color: 'bg-lime-500' },
 ];
@@ -75,8 +78,17 @@ const mantenimientoMenu: MenuItem[] = [
   { label: 'Configuraciones', icon: '⚙️', path: '/configuracion', color: 'bg-orange-500' },
 ];
 
-function MenuSection({ title, items, icon }: MenuSectionProps) {
+function MenuSection({ title, items, icon, onLobbyClick }: MenuSectionProps) {
   const router = useRouter();
+  
+  const handleClick = (item: MenuItem) => {
+    if (item.path === '/lobby' && onLobbyClick) {
+      // Cargar vista de Lobby
+      onLobbyClick();
+    } else {
+      router.push(item.path);
+    }
+  };
   
   return (
     <div className="mb-6">
@@ -87,7 +99,7 @@ function MenuSection({ title, items, icon }: MenuSectionProps) {
         {items.map((item) => (
           <button
             key={item.path}
-            onClick={() => router.push(item.path)}
+            onClick={() => handleClick(item)}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-white/10 hover:text-white transition-all duration-200 group"
           >
             <span className={`w-8 h-8 rounded-lg ${item.color} flex items-center justify-center text-sm shadow-lg group-hover:scale-110 transition-transform`}>
@@ -101,9 +113,12 @@ function MenuSection({ title, items, icon }: MenuSectionProps) {
   );
 }
 
-function StatCard({ title, value, icon, trend, trendUp, gradient }: StatCardProps) {
+function StatCard({ title, value, icon, trend, trendUp, gradient, onClick }: StatCardProps) {
   return (
-    <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-5 hover:bg-white/10 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl group">
+    <div 
+      className={`bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-5 hover:bg-white/10 transition-all duration-300 ${onClick ? 'hover:scale-[1.02] hover:shadow-xl cursor-pointer' : ''} group`}
+      onClick={onClick}
+    >
       <div className="flex items-start justify-between mb-4">
         <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-2xl shadow-lg group-hover:scale-110 transition-transform`}>
           {icon}
@@ -152,6 +167,15 @@ export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [habitacionesPorVencer, setHabitacionesPorVencer] = useState<ActividadReciente[]>([]);
   const [loadingHabitaciones, setLoadingHabitaciones] = useState(true);
+  const [habitaciones, setHabitaciones] = useState<Habitacion[]>([]);
+  const [loadingHabitacionesLobby, setLoadingHabitacionesLobby] = useState(false);
+  const [showLobbyView, setShowLobbyView] = useState(false);
+  const [habitacionesStats, setHabitacionesStats] = useState({
+    disponibles: 0,
+    ocupadas: 0,
+    limpieza: 0,
+    mantenimiento: 0
+  });
 
   useEffect(() => {
     const checkDbConnection = async () => {
@@ -187,6 +211,75 @@ export default function DashboardPage() {
     const interval = setInterval(cargarHabitacionesPorVencer, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Cargar estadísticas de habitaciones
+  useEffect(() => {
+    const cargarStatsHabitaciones = async () => {
+      try {
+        const response = await fetch('/api/habitaciones');
+        const result = await response.json();
+        if (result.success) {
+          const habs = result.data as Habitacion[];
+          const stats = {
+            disponibles: habs.filter(h => h.estado === 'Disponible' && h.activa !== false).length,
+            ocupadas: habs.filter(h => h.estado === 'Ocupada').length,
+            limpieza: habs.filter(h => h.estado === 'Limpieza').length,
+            mantenimiento: habs.filter(h => h.estado === 'Mantenimiento').length
+          };
+          setHabitacionesStats(stats);
+        }
+      } catch (error) {
+        console.error('Error cargando estadísticas:', error);
+      }
+    };
+
+    cargarStatsHabitaciones();
+    const interval = setInterval(cargarStatsHabitaciones, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Cargar habitaciones para Lobby
+  const cargarHabitacionesLobby = async () => {
+    setLoadingHabitacionesLobby(true);
+    setShowLobbyView(true);
+    try {
+      const response = await fetch('/api/habitaciones');
+      const result = await response.json();
+      if (result.success) {
+        setHabitaciones(result.data);
+      }
+    } catch (error) {
+      console.error('Error cargando habitaciones:', error);
+    } finally {
+      setLoadingHabitacionesLobby(false);
+    }
+  };
+
+  // Cambiar estado de habitación
+  const cambiarEstadoHabitacion = async (habitacionId: number, nuevoEstado: string) => {
+    try {
+      const response = await fetch(`/api/habitaciones/${habitacionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: nuevoEstado })
+      });
+      const result = await response.json();
+      if (result.success) {
+        // Recargar habitaciones
+        cargarHabitacionesLobby();
+      } else {
+        alert(result.error || 'Error al cambiar estado');
+      }
+    } catch (error) {
+      console.error('Error cambiando estado:', error);
+      alert('Error al cambiar estado');
+    }
+  };
+
+  // Navegar a habitaciones con filtro
+  const navigateToHabitaciones = (estado: string) => {
+    router.push(`/habitaciones?estado=${estado}`);
+  };
 
   useEffect(() => {
     if (!user) {
@@ -274,7 +367,7 @@ export default function DashboardPage() {
         <aside className={`${sidebarOpen ? 'w-72' : 'w-0'} transition-all duration-300 overflow-hidden`}>
           <div className="w-72 h-[calc(100vh-64px)] bg-slate-900/50 backdrop-blur-xl border-r border-white/10 p-4 overflow-y-auto">
             <MenuSection title="Maestro" icon="📁" items={maestroMenu} />
-            <MenuSection title="Lobby" icon="🏠" items={lobbyMenu} />
+            <MenuSection title="Lobby" icon="🏠" items={lobbyMenu} onLobbyClick={cargarHabitacionesLobby} />
             <MenuSection title="Mantenimiento" icon="🔧" items={mantenimientoMenu} />
           </div>
         </aside>
@@ -292,29 +385,49 @@ export default function DashboardPage() {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
             <StatCard
-              title="Habitaciones Disponibles"
-              value="12"
+              title="Disponibles"
+              value={String(habitacionesStats.disponibles)}
               icon="🛏️"
-              trend="+2 desde ayer"
-              trendUp={true}
+              trend="Listas para usar"
+              trendUp={null}
               gradient="from-green-500 to-emerald-600"
+              onClick={() => navigateToHabitaciones('Disponible')}
             />
             <StatCard
-              title="Habitaciones Ocupadas"
-              value="8"
+              title="Ocupadas"
+              value={String(habitacionesStats.ocupadas)}
               icon="🔒"
-              trend="65% ocupación"
+              trend="En uso"
               trendUp={null}
               gradient="from-blue-500 to-cyan-600"
+              onClick={() => navigateToHabitaciones('Ocupada')}
+            />
+            <StatCard
+              title="Limpieza"
+              value={String(habitacionesStats.limpieza)}
+              icon="🧹"
+              trend="Por limpiar"
+              trendUp={null}
+              gradient="from-yellow-500 to-orange-600"
+              onClick={() => navigateToHabitaciones('Limpieza')}
+            />
+            <StatCard
+              title="Mantenimiento"
+              value={String(habitacionesStats.mantenimiento)}
+              icon="🔧"
+              trend="En reparación"
+              trendUp={null}
+              gradient="from-red-500 to-pink-600"
+              onClick={() => navigateToHabitaciones('Mantenimiento')}
             />
             <StatCard
               title="Por Vencer (5 min)"
-              value="2"
+              value={String(habitacionesPorVencer.length)}
               icon="⏰"
               trend="Requiere atención"
-              trendUp={false}
+              trendUp={null}
               gradient="from-red-500 to-orange-600"
             />
           </div>
@@ -422,6 +535,148 @@ export default function DashboardPage() {
           </div>
         </main>
       </div>
+
+      {/* Lobby View Modal */}
+      {showLobbyView && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 overflow-y-auto">
+          <div className="min-h-screen p-4">
+            <div className="max-w-7xl mx-auto">
+              {/* Header */}
+              <div className="flex justify-between items-center mb-6 mt-4">
+                <div>
+                  <h2 className="text-3xl font-bold text-white flex items-center gap-3">
+                    <span className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center text-2xl">
+                      🏨
+                    </span>
+                    Lobby - Vista de Habitaciones
+                  </h2>
+                  <p className="text-slate-400 mt-1">Gestiona las habitaciones del motel</p>
+                </div>
+                <button
+                  onClick={() => setShowLobbyView(false)}
+                  className="px-6 py-3 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-colors flex items-center gap-2"
+                >
+                  ✕ Cerrar
+                </button>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-green-500/20 rounded-xl p-4 border border-green-500/30">
+                  <p className="text-green-400 text-sm">Disponibles</p>
+                  <p className="text-2xl font-bold text-white">{habitaciones.filter(h => h.estado === 'Disponible').length}</p>
+                </div>
+                <div className="bg-blue-500/20 rounded-xl p-4 border border-blue-500/30">
+                  <p className="text-blue-400 text-sm">Ocupadas</p>
+                  <p className="text-2xl font-bold text-white">{habitaciones.filter(h => h.estado === 'Ocupada').length}</p>
+                </div>
+                <div className="bg-yellow-500/20 rounded-xl p-4 border border-yellow-500/30">
+                  <p className="text-yellow-400 text-sm">Limpieza</p>
+                  <p className="text-2xl font-bold text-white">{habitaciones.filter(h => h.estado === 'Limpieza').length}</p>
+                </div>
+                <div className="bg-red-500/20 rounded-xl p-4 border border-red-500/30">
+                  <p className="text-red-400 text-sm">Mantenimiento</p>
+                  <p className="text-2xl font-bold text-white">{habitaciones.filter(h => h.estado === 'Mantenimiento').length}</p>
+                </div>
+              </div>
+
+              {/* Room Grid */}
+              {loadingHabitacionesLobby ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
+                  <p className="mt-4 text-slate-400">Cargando habitaciones...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-8">
+                  {habitaciones
+                    .filter(h => h.activa !== false)
+                    .sort((a, b) => a.numero.localeCompare(b.numero, undefined, { numeric: true }))
+                    .map((habitacion) => (
+                      <div
+                        key={habitacion.id}
+                        className={`rounded-2xl border-2 p-4 transition-all duration-300 hover:scale-105 ${
+                          habitacion.estado === 'Disponible' 
+                            ? 'bg-green-500/20 border-green-500/40 hover:shadow-green-500/20 hover:shadow-xl'
+                            : habitacion.estado === 'Ocupada'
+                            ? 'bg-blue-500/20 border-blue-500/40 hover:shadow-blue-500/20 hover:shadow-xl'
+                            : habitacion.estado === 'Limpieza'
+                            ? 'bg-yellow-500/20 border-yellow-500/40 hover:shadow-yellow-500/20 hover:shadow-xl'
+                            : 'bg-red-500/20 border-red-500/40 hover:shadow-red-500/20 hover:shadow-xl'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <span className="text-2xl font-bold text-white">#{habitacion.numero}</span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            habitacion.estado === 'Disponible' 
+                              ? 'bg-green-500/30 text-green-300'
+                              : habitacion.estado === 'Ocupada'
+                              ? 'bg-blue-500/30 text-blue-300'
+                              : habitacion.estado === 'Limpieza'
+                              ? 'bg-yellow-500/30 text-yellow-300'
+                              : 'bg-red-500/30 text-red-300'
+                          }`}>
+                            {habitacion.estado === 'Disponible' ? '🛏️' : habitacion.estado === 'Ocupada' ? '🔒' : habitacion.estado === 'Limpieza' ? '🧹' : '🔧'}
+                          </span>
+                        </div>
+                        <p className="text-slate-300 text-sm mb-3">{habitacion.tipo}</p>
+                        <div className="space-y-2">
+                          {habitacion.estado === 'Disponible' && (
+                            <button
+                              onClick={() => router.push('/reservas/nueva')}
+                              className="w-full py-2 bg-green-500/30 hover:bg-green-500/50 text-green-300 rounded-lg text-sm font-medium transition-colors"
+                            >
+                              ✅ Check-in
+                            </button>
+                          )}
+                          {habitacion.estado === 'Ocupada' && (
+                            <button
+                              onClick={() => router.push('/reservas')}
+                              className="w-full py-2 bg-blue-500/30 hover:bg-blue-500/50 text-blue-300 rounded-lg text-sm font-medium transition-colors"
+                            >
+                              📤 Check-out
+                            </button>
+                          )}
+                          {habitacion.estado === 'Disponible' && (
+                            <button
+                              onClick={() => cambiarEstadoHabitacion(habitacion.id, 'Limpieza')}
+                              className="w-full py-2 bg-yellow-500/30 hover:bg-yellow-500/50 text-yellow-300 rounded-lg text-sm font-medium transition-colors"
+                            >
+                              🧹 Limpieza
+                            </button>
+                          )}
+                          {habitacion.estado === 'Limpieza' && (
+                            <button
+                              onClick={() => cambiarEstadoHabitacion(habitacion.id, 'Disponible')}
+                              className="w-full py-2 bg-green-500/30 hover:bg-green-500/50 text-green-300 rounded-lg text-sm font-medium transition-colors"
+                            >
+                              ✅ Disponible
+                            </button>
+                          )}
+                          {(habitacion.estado === 'Disponible' || habitacion.estado === 'Limpieza') && (
+                            <button
+                              onClick={() => cambiarEstadoHabitacion(habitacion.id, 'Mantenimiento')}
+                              className="w-full py-2 bg-red-500/30 hover:bg-red-500/50 text-red-300 rounded-lg text-sm font-medium transition-colors"
+                            >
+                              🔧 Mantenimiento
+                            </button>
+                          )}
+                          {habitacion.estado === 'Mantenimiento' && (
+                            <button
+                              onClick={() => cambiarEstadoHabitacion(habitacion.id, 'Disponible')}
+                              className="w-full py-2 bg-green-500/30 hover:bg-green-500/50 text-green-300 rounded-lg text-sm font-medium transition-colors"
+                            >
+                              ✅ Disponible
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
