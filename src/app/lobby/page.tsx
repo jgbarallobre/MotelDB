@@ -15,6 +15,8 @@ export default function LobbyPage() {
   const [filtroPorVencer, setFiltroPorVencer] = useState<boolean>(false);
   const [dbConnected, setDbConnected] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [reservasActivas, setReservasActivas] = useState<any[]>([]);
+  const [processingId, setProcessingId] = useState<number | null>(null);
 
   // Get filter from URL params
   useEffect(() => {
@@ -64,6 +66,7 @@ export default function LobbyPage() {
       }
     };
     checkDbConnection();
+    fetchReservasActivas();
     
     // Update time every second
     const timer = setInterval(() => {
@@ -152,6 +155,86 @@ export default function LobbyPage() {
         return 'Mantenimiento';
       default:
         return estado;
+    }
+  };
+
+  const fetchReservasActivas = async () => {
+    try {
+      const response = await fetch('/api/reservas?estado=activa');
+      const result = await response.json();
+      if (result.success) {
+        setReservasActivas(result.data);
+      }
+    } catch (error) {
+      console.error('Error cargando reservas activas:', error);
+    }
+  };
+
+  const getReservaActiva = (habitacionId: number) => {
+    return reservasActivas.find(r => r.habitacion_id === habitacionId);
+  };
+
+  const handleCheckIn = (habitacion: Habitacion) => {
+    router.push(`/reservas/nueva?habitacion=${habitacion.id}`);
+  };
+
+  const handleCheckOut = async (habitacionId: number) => {
+    const reserva = getReservaActiva(habitacionId);
+    if (!reserva) {
+      alert('No hay reserva activa para esta habitación');
+      return;
+    }
+    
+    if (!confirm('¿Confirmar check-out de esta habitación?')) {
+      return;
+    }
+    
+    setProcessingId(habitacionId);
+    try {
+      const response = await fetch(`/api/reservas/${reserva.id}/checkout`, {
+        method: 'POST',
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        alert('Check-out realizado con éxito');
+        fetchHabitaciones();
+        fetchReservasActivas();
+      } else {
+        alert('Error en check-out: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error en check-out:', error);
+      alert('Error realizando check-out');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleCambiarEstado = async (habitacionId: number, nuevoEstado: string) => {
+    if (!confirm(`¿Cambiar estado a "${nuevoEstado}"?`)) {
+      return;
+    }
+    
+    setProcessingId(habitacionId);
+    try {
+      const response = await fetch(`/api/habitaciones/${habitacionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        fetchHabitaciones();
+      } else {
+        alert('Error cambiando estado: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error cambiando estado:', error);
+      alert('Error cambiando estado');
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -316,39 +399,92 @@ export default function LobbyPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                  {habitaciones.map((habitacion) => (
-                    <div
-                      key={habitacion.id}
-                      className={`relative bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-4 hover:bg-white/10 transition-all duration-300 hover:scale-105 cursor-pointer group ${
-                        habitacion.activa === false ? 'opacity-50' : ''
-                      }`}
-                    >
-                      {/* Room Number */}
-                      <div className="text-center mb-3">
-                        <span className="text-3xl font-bold text-white">{habitacion.numero}</span>
-                      </div>
-                      
-                      {/* Status Badge */}
-                      <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium text-white ${getEstadoColor(habitacion.estado)}`}>
-                        {getEstadoLabel(habitacion.estado || 'Sin estado')}
-                      </div>
-                      
-                      {/* Room Info */}
-                      <div className="text-center">
-                        <p className="text-slate-400 text-sm truncate">
-                          {habitacion.descripcion || 'Sin descripción'}
-                        </p>
-                        {habitacion.activa === false && (
-                          <span className="inline-block mt-2 px-2 py-0.5 bg-red-500/20 text-red-300 text-xs rounded-full">
-                            Inactiva
-                          </span>
-                        )}
-                      </div>
+                  {habitaciones.map((habitacion) => {
+                    const reserva = getReservaActiva(habitacion.id);
+                    const isProcessing = processingId === habitacion.id;
+                    
+                    return (
+                      <div
+                        key={habitacion.id}
+                        className={`relative bg-white/5 backdrop-blur-xl rounded-2xl border p-4 transition-all duration-300 hover:scale-105 cursor-pointer group ${
+                          habitacion.estado === 'Disponible' 
+                            ? 'border-green-500/30 hover:border-green-400' 
+                            : habitacion.estado === 'Ocupada'
+                            ? 'border-red-500/30 hover:border-red-400'
+                            : habitacion.estado === 'Limpieza'
+                            ? 'border-blue-500/30 hover:border-blue-400'
+                            : 'border-yellow-500/30 hover:border-yellow-400'
+                        } ${habitacion.activa === false ? 'opacity-50' : ''}`}
+                      >
+                        {/* Room Number */}
+                        <div className="text-center mb-2">
+                          <span className="text-3xl font-bold text-white">{habitacion.numero}</span>
+                        </div>
+                        
+                        {/* Status Badge */}
+                        <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium text-white ${getEstadoColor(habitacion.estado)}`}>
+                          {getEstadoLabel(habitacion.estado || 'Sin estado')}
+                        </div>
+                        
+                        {/* Room Info */}
+                        <div className="text-center mb-2">
+                          <p className="text-slate-400 text-sm truncate">
+                            {habitacion.descripcion || 'Sin descripción'}
+                          </p>
+                          {habitacion.activa === false && (
+                            <span className="inline-block mt-2 px-2 py-0.5 bg-red-500/20 text-red-300 text-xs rounded-full">
+                              Inactiva
+                            </span>
+                          )}
+                        </div>
 
-                      {/* Hover Effect */}
-                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-                    </div>
-                  ))}
+                        {/* Operation Buttons */}
+                        <div className="mt-2">
+                          {habitacion.estado === 'Disponible' && (
+                            <button
+                              onClick={() => handleCheckIn(habitacion)}
+                              className="w-full py-1.5 px-2 bg-green-600 hover:bg-green-500 text-white text-xs font-medium rounded-lg transition-colors"
+                            >
+                              📥 Check-in
+                            </button>
+                          )}
+                          
+                          {habitacion.estado === 'Ocupada' && (
+                            <button
+                              onClick={() => handleCheckOut(habitacion.id)}
+                              disabled={isProcessing}
+                              className="w-full py-1.5 px-2 bg-red-600 hover:bg-red-500 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                            >
+                              {isProcessing ? '⏳' : '📤'} Check-out
+                            </button>
+                          )}
+                          
+                          {habitacion.estado === 'Limpieza' && (
+                            <button
+                              onClick={() => handleCambiarEstado(habitacion.id, 'Disponible')}
+                              disabled={isProcessing}
+                              className="w-full py-1.5 px-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                            >
+                              {isProcessing ? '⏳' : '✅'} Disponible
+                            </button>
+                          )}
+                          
+                          {habitacion.estado === 'Mantenimiento' && (
+                            <button
+                              onClick={() => handleCambiarEstado(habitacion.id, 'Disponible')}
+                              disabled={isProcessing}
+                              className="w-full py-1.5 px-2 bg-yellow-600 hover:bg-yellow-500 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                            >
+                              {isProcessing ? '⏳' : '🔧'} Liberar
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Hover Effect */}
+                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </>
