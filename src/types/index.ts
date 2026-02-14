@@ -103,3 +103,33 @@ export interface EstadisticasDashboard {
   ingresos_hoy: number;
   ingresos_mes: number;
 }
+
+// Tipos para Usuarios y Permisos
+export type RolUsuario = 'Admin' | 'Recepcionista' | 'Gerente';
+
+export interface Usuario {
+  id: number;
+  username: string;
+  nombre: string;
+  email?: string;
+  rol: RolUsuario;
+  activo: boolean;
+  fecha_creacion: Date;
+  ultimo_acceso?: Date;
+}
+
+export interface NuevoUsuario {
+  username: string;
+  password: string;
+  nombre: string;
+  email?: string;
+  rol: RolUsuario;
+}
+
+export interface ActualizarUsuario {
+  nombre?: string;
+  email?: string;
+  rol?: RolUsuario;
+  activo?: boolean;
+  password?: string; // Opcional, para cambiar contraseña
+}
