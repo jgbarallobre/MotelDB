@@ -36,6 +36,11 @@ Complete motel management system with authentication, dashboard, room management
 - [x] Usuarios page redesigned with modern table and modal forms
 - [x] All pages now use dark theme with backdrop blur effects
 - [x] Added animations and hover effects throughout the UI
+- [x] **Dashboard Updates** - Removed Reservas and Ingresos stat cards
+- [x] Added "Habitaciones por Vencer" section showing rooms with <5 min remaining
+- [x] **Maestro-Habitaciones Refactored** - Full CRUD with number, description, active/inactive state
+- [x] Added "activa" field to Habitaciones table and API for enable/disable
+- [x] API `/api/reservas` now supports `por_vencer` filter for expiring reservations
 
 ## Current Structure
 
