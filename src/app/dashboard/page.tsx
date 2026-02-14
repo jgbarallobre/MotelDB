@@ -169,6 +169,25 @@ export default function DashboardPage() {
   });
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentDate, setCurrentDate] = useState(new Date());
+  
+  // Estado de jornada
+  const [jornadaActiva, setJornadaActiva] = useState<any>(null);
+  const [loadingJornada, setLoadingJornada] = useState(true);
+  const [showModalJornada, setShowModalJornada] = useState(false);
+  const [showModalIniciarJornada, setShowModalIniciarJornada] = useState(false);
+  const [jornadas, setJornadas] = useState<any[]>([]);
+  const [ultimaTasa, setUltimaTasa] = useState<number>(0);
+  
+  // Form data for iniciar jornada
+  const [credenciales, setCredenciales] = useState({ username: '', password: '' });
+  const [jornadaSeleccionada, setJornadaSeleccionada] = useState<number | null>(null);
+  const [fechaTrabajo, setFechaTrabajo] = useState('');
+  const [montoAperturaBs, setMontoAperturaBs] = useState('');
+  const [montoAperturaUsd, setMontoAperturaUsd] = useState('');
+  const [tasaCambio, setTasaCambio] = useState('');
+  const [loadingIniciarJornada, setLoadingIniciarJornada] = useState(false);
+  const [errorJornada, setErrorJornada] = useState('');
+  const [stepJornada, setStepJornada] = useState(1); // 1: credenciales, 2: datos jornada
 
   // Hydration fix - set mounted after client-side render
   useEffect(() => {
@@ -254,6 +273,58 @@ export default function DashboardPage() {
     cargarStatsHabitaciones();
     const interval = setInterval(cargarStatsHabitaciones, 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Cargar jornada activa al iniciar
+  useEffect(() => {
+    const cargarJornadaActiva = async () => {
+      try {
+        const response = await fetch('/api/jornada');
+        const result = await response.json();
+        setJornadaActiva(result.jornada);
+      } catch (error) {
+        console.error('Error cargando jornada:', error);
+      } finally {
+        setLoadingJornada(false);
+      }
+    };
+
+    cargarJornadaActiva();
+  }, []);
+
+  // Cargar últimas tasas de cambio
+  useEffect(() => {
+    const cargarTasas = async () => {
+      try {
+        const response = await fetch('/api/tasas');
+        const result = await response.json();
+        if (result.tasa) {
+          setUltimaTasa(result.tasa.tasa);
+          setTasaCambio(String(result.tasa.tasa));
+        }
+      } catch (error) {
+        console.error('Error cargando tasas:', error);
+      }
+    };
+
+    cargarTasas();
+  }, []);
+
+  // Cargar lista de jornadas disponibles
+  useEffect(() => {
+    const cargarJornadas = async () => {
+      try {
+        const response = await fetch('/api/jornadas');
+        const result = await response.json();
+        if (result.success) {
+          setJornadas(result.data);
+        }
+      } catch (error) {
+        console.error('Error cargando jornadas:', error);
+      }
+    };
+
+    cargarJornadas();
   }, []);
 
   // Cargar habitaciones para Lobby
@@ -364,6 +435,44 @@ export default function DashboardPage() {
                 {dbConnected ? 'Base de datos conectada' : 'Sin conexión'}
               </span>
             </div>
+
+            {/* Jornada Status & Buttons */}
+            {!loadingJornada && (
+              <div className="flex items-center gap-2">
+                {jornadaActiva ? (
+                  <>
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-emerald-500/20 border border-emerald-500/30">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                      <span className="text-emerald-300">
+                        {jornadaActiva.jornada_nombre} - {jornadaActiva.usuario_nombre}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setShowModalJornada(true)}
+                      className="px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-300 hover:text-red-200 transition-all text-sm font-medium border border-red-500/30"
+                    >
+                      Finalizar Jornada
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setStepJornada(1);
+                      setCredenciales({ username: '', password: '' });
+                      setJornadaSeleccionada(null);
+                      setFechaTrabajo(new Date().toISOString().split('T')[0]);
+                      setMontoAperturaBs('');
+                      setMontoAperturaUsd('');
+                      setErrorJornada('');
+                      setShowModalIniciarJornada(true);
+                    }}
+                    className="px-4 py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 hover:text-emerald-200 transition-all text-sm font-medium border border-emerald-500/30"
+                  >
+                    Iniciar Jornada
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* User Info */}
             <div className="flex items-center gap-3 bg-white/10 rounded-full px-4 py-1.5">
@@ -721,6 +830,236 @@ export default function DashboardPage() {
                     ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para Iniciar Jornada */}
+      {showModalIniciarJornada && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-2xl border border-white/10 w-full max-w-md p-6 shadow-2xl">
+            <h3 className="text-xl font-bold text-white mb-4">Iniciar Jornada de Trabajo</h3>
+            
+            {errorJornada && (
+              <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-300 text-sm">
+                {errorJornada}
+              </div>
+            )}
+
+            {stepJornada === 1 ? (
+              /* Step 1: Credenciales */
+              <div className="space-y-4">
+                <p className="text-slate-300 text-sm">Ingrese sus credenciales para iniciar la jornada:</p>
+                <div>
+                  <label className="block text-slate-400 text-sm mb-1">Usuario</label>
+                  <input
+                    type="text"
+                    value={credenciales.username}
+                    onChange={(e) => setCredenciales({ ...credenciales, username: e.target.value })}
+                    className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                    placeholder="Nombre de usuario"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 text-sm mb-1">Contraseña</label>
+                  <input
+                    type="password"
+                    value={credenciales.password}
+                    onChange={(e) => setCredenciales({ ...credenciales, password: e.target.value })}
+                    className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                    placeholder="••••••••"
+                  />
+                </div>
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={() => setShowModalIniciarJornada(false)}
+                    className="flex-1 px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!credenciales.username || !credenciales.password) {
+                        setErrorJornada('Ingrese usuario y contraseña');
+                        return;
+                      }
+                      setStepJornada(2);
+                      setErrorJornada('');
+                    }}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    Continuar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Step 2: Datos de la jornada */
+              <div className="space-y-4">
+                <p className="text-slate-300 text-sm">Complete los datos de la jornada:</p>
+                
+                <div>
+                  <label className="block text-slate-400 text-sm mb-1">Jornada a trabajar</label>
+                  <select
+                    value={jornadaSeleccionada || ''}
+                    onChange={(e) => setJornadaSeleccionada(Number(e.target.value))}
+                    className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="">Seleccionar jornada...</option>
+                    {jornadas.filter(j => j.activo).map((jornada) => (
+                      <option key={jornada.id} value={jornada.id}>
+                        {jornada.nombre} ({jornada.hora_inicio} - {jornada.hora_fin})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 text-sm mb-1">Fecha de trabajo</label>
+                  <input
+                    type="date"
+                    value={fechaTrabajo}
+                    onChange={(e) => setFechaTrabajo(e.target.value)}
+                    className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-slate-400 text-sm mb-1">Monto apertura (Bs)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={montoAperturaBs}
+                      onChange={(e) => setMontoAperturaBs(e.target.value)}
+                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 text-sm mb-1">Monto apertura ($)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={montoAperturaUsd}
+                      onChange={(e) => setMontoAperturaUsd(e.target.value)}
+                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 text-sm mb-1">Tasa de cambio ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={tasaCambio}
+                    onChange={(e) => setTasaCambio(e.target.value)}
+                    className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                    placeholder={String(ultimaTasa)}
+                  />
+                  {ultimaTasa > 0 && (
+                    <p className="text-xs text-slate-500 mt-1">Última tasa: {ultimaTasa} Bs/USD</p>
+                  )}
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={() => setStepJornada(1)}
+                    className="flex-1 px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors"
+                  >
+                    Atrás
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setErrorJornada('');
+                      
+                      if (!jornadaSeleccionada) {
+                        setErrorJornada('Seleccione una jornada');
+                        return;
+                      }
+                      if (!fechaTrabajo) {
+                        setErrorJornada('Ingrese la fecha de trabajo');
+                        return;
+                      }
+                      if (!tasaCambio || parseFloat(tasaCambio) <= 0) {
+                        setErrorJornada('Ingrese una tasa de cambio válida');
+                        return;
+                      }
+
+                      setLoadingIniciarJornada(true);
+                      try {
+                        const response = await fetch('/api/jornada/iniciar', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            username: credenciales.username,
+                            password: credenciales.password,
+                            jornada_id: jornadaSeleccionada,
+                            fecha_trabajo: fechaTrabajo,
+                            monto_apertura_bs: parseFloat(montoAperturaBs) || 0,
+                            monto_apertura_usd: parseFloat(montoAperturaUsd) || 0,
+                            tasa_cambio: parseFloat(tasaCambio)
+                          })
+                        });
+
+                        const result = await response.json();
+
+                        if (!response.ok) {
+                          setErrorJornada(result.error || 'Error al iniciar jornada');
+                          return;
+                        }
+
+                        // Recargar jornada activa
+                        const jornadaResponse = await fetch('/api/jornada');
+                        const jornadaResult = await jornadaResponse.json();
+                        setJornadaActiva(jornadaResult.jornada);
+
+                        setShowModalIniciarJornada(false);
+                        alert('Jornada iniciada correctamente');
+                      } catch (error) {
+                        setErrorJornada('Error al iniciar jornada');
+                      } finally {
+                        setLoadingIniciarJornada(false);
+                      }
+                    }}
+                    disabled={loadingIniciarJornada}
+                    className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium disabled:opacity-50"
+                  >
+                    {loadingIniciarJornada ? 'Iniciando...' : 'Aceptar'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal para Finalizar Jornada (placeholder) */}
+      {showModalJornada && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-2xl border border-white/10 w-full max-w-md p-6 shadow-2xl">
+            <h3 className="text-xl font-bold text-white mb-4">Finalizar Jornada</h3>
+            <p className="text-slate-300 mb-6">
+              ¿Está seguro que desea finalizar la jornada de <strong>{jornadaActiva?.jornada_nombre}</strong>?
+            </p>
+            <p className="text-slate-400 text-sm mb-6">
+              La funcionalidad de cierre de jornada con resumen de ingresos se implementará más adelante.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowModalJornada(false)}
+                className="flex-1 px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => setShowModalJornada(false)}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+              >
+                Aceptar
+              </button>
             </div>
           </div>
         </div>

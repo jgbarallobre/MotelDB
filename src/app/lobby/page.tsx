@@ -18,6 +18,10 @@ export default function LobbyPage() {
   const [reservasActivas, setReservasActivas] = useState<any[]>([]);
   const [processingId, setProcessingId] = useState<number | null>(null);
   const [historialLimpieza, setHistorialLimpieza] = useState<any[]>([]);
+  const [jornadaActiva, setJornadaActiva] = useState<any>(null);
+  const [loadingJornada, setLoadingJornada] = useState(true);
+  const [showModalSinJornada, setShowModalSinJornada] = useState(false);
+  const [operacionPendiente, setOperacionPendiente] = useState<{ tipo: string; habitacionId?: number; tipoAccion?: string } | null>(null);
 
   // Get filter from URL params
   useEffect(() => {
@@ -70,6 +74,20 @@ export default function LobbyPage() {
     fetchReservasActivas();
     fetchHistorialLimpieza();
     
+    // Check if jornada is active
+    const checkJornadaActiva = async () => {
+      try {
+        const response = await fetch('/api/jornada');
+        const result = await response.json();
+        setJornadaActiva(result.jornada);
+      } catch (error) {
+        console.error('Error checking jornada:', error);
+      } finally {
+        setLoadingJornada(false);
+      }
+    };
+    checkJornadaActiva();
+
     // Update time every second
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -189,10 +207,21 @@ export default function LobbyPage() {
   };
 
   const handleCheckIn = (habitacion: Habitacion) => {
+    // Check if jornada is active
+    if (!jornadaActiva) {
+      alert('Debe iniciar una jornada de trabajo antes de realizar check-in');
+      return;
+    }
     router.push(`/reservas/nueva?habitacion=${habitacion.id}`);
   };
 
   const handleCheckOut = async (habitacionId: number) => {
+    // Check if jornada is active
+    if (!jornadaActiva) {
+      alert('Debe iniciar una jornada de trabajo antes de realizar check-out');
+      return;
+    }
+
     const reserva = getReservaActiva(habitacionId);
     if (!reserva) {
       alert('No hay reserva activa para esta habitación');
@@ -274,6 +303,12 @@ export default function LobbyPage() {
 
   // Handle starting limpieza or mantenimiento
   const handleIniciarLimpiezaMantenimiento = async (habitacionId: number, tipo: 'Limpieza' | 'Mantenimiento') => {
+    // Check if jornada is active
+    if (!jornadaActiva) {
+      alert('Debe iniciar una jornada de trabajo antes de iniciar limpieza o mantenimiento');
+      return;
+    }
+
     if (!confirm(`¿Iniciar ${tipo} para esta habitación?`)) {
       return;
     }
