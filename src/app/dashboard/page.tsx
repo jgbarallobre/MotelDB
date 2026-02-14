@@ -365,7 +365,7 @@ export default function DashboardPage() {
                   hour: '2-digit', 
                   minute: '2-digit', 
                   second: '2-digit',
-                  hour12: false 
+                  hour12: true 
                 })}
               </div>
               <div className="text-xs text-slate-300 font-medium">
