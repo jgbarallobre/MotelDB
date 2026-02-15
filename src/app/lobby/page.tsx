@@ -14,7 +14,7 @@ function LobbyContent() {
   const [filtroActiva, setFiltroActiva] = useState<string>('');
   const [filtroPorVencer, setFiltroPorVencer] = useState<boolean>(false);
   const [dbConnected, setDbConnected] = useState(false);
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<string | null>(null);
   const [reservasActivas, setReservasActivas] = useState<any[]>([]);
   const [processingId, setProcessingId] = useState<number | null>(null);
   const [historialLimpieza, setHistorialLimpieza] = useState<any[]>([]);
@@ -90,7 +90,12 @@ function LobbyContent() {
 
     // Update time every second
     const timer = setInterval(() => {
-      setCurrentTime(new Date());
+      setCurrentTime(new Date().toLocaleTimeString('es-AR', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit',
+        hour12: true 
+      }));
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -451,12 +456,7 @@ function LobbyContent() {
             {/* Clock */}
             <div className="flex flex-col items-end bg-gradient-to-r from-green-600/20 to-emerald-600/20 rounded-xl px-4 py-2 border border-white/10">
               <div className="text-xl font-bold text-white tracking-wider font-mono">
-                {currentTime.toLocaleTimeString('es-AR', { 
-                  hour: '2-digit', 
-                  minute: '2-digit', 
-                  second: '2-digit',
-                  hour12: true 
-                })}
+                {currentTime || 'Cargando...'}
               </div>
             </div>
           </div>
