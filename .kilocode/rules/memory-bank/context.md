@@ -67,6 +67,7 @@ Complete motel management system with authentication, dashboard, room management
 - [x] Nueva función helper `validarJornadaActiva()` en `src/lib/jornada.ts`
 - [x] API valida jornada: check-in, limpieza, reservas, checkout, cambiar estado habitación
 - [x] UI lobby muestra alerta si no hay jornada activa antes de operaciones
+- [x] **Fix Check-in Navigation** - Lobby ahora navega a `/checkin/[id]` en lugar de `/reservas/nueva`
 
 ## Current Structure
 
@@ -124,11 +125,7 @@ SQL Server connection with status monitoring:
 
 | Date | Changes |
 |------|---------|
-<<<<<<< HEAD
-| 2025-02-14 | **Check-in Flow** - Complete check-in system with payment, summary, and room status update |
-=======
-| 2025-02-14 | **Limpieza/Mantenimiento Enhanced** - Buttons for cleaning/maintenance on available rooms, timer for maintenance, HistorialLimpieza table |
->>>>>>> c6a2a9aed6229ff7557fff6352f57e08174ba949
+| 2025-02-15 | **Fix Check-in Navigation** - Lobby ahora navega al nuevo flujo de Check-in moderno (/checkin/[id]) en lugar de la página antigua en blanco |
 | 2025-02-14 | **Fix Login Redirect** - Added loadingAuth state to prevent race condition between localStorage load and redirect |
 | 2025-02-14 | **UI/UX Visual Improvements** - Modern dark theme with glassmorphism, sidebar navigation, gradient cards, animations |
 | 2025-02-14 | **Impresoras Fiscales** - Configuración de impresoras (Fiscal, No Fiscal, Ticketera) |
