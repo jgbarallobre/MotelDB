@@ -261,7 +261,7 @@ function CheckinContent() {
 
       {/* Tasa de Cambio Card - Right side */}
       {tasaCambio > 0 && (
-        <div className="absolute right-4 top-44 z-40">
+        <div className="absolute right-8 top-40 z-40">
           <div className="bg-gradient-to-r from-amber-500/20 to-yellow-500/20 backdrop-blur-xl rounded-xl border border-amber-500/30 px-4 py-2 shadow-lg">
             <div className="flex items-center gap-2">
               <span className="text-amber-400">💵</span>
