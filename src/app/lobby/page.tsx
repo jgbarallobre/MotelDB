@@ -22,6 +22,7 @@ function LobbyContent() {
   const [loadingJornada, setLoadingJornada] = useState(true);
   const [showModalSinJornada, setShowModalSinJornada] = useState(false);
   const [operacionPendiente, setOperacionPendiente] = useState<{ tipo: string; habitacionId?: number; tipoAccion?: string } | null>(null);
+  const [ultimaTasa, setUltimaTasa] = useState<number>(0);
 
   // Get filter from URL params
   useEffect(() => {
@@ -73,6 +74,20 @@ function LobbyContent() {
     checkDbConnection();
     fetchReservasActivas();
     fetchHistorialLimpieza();
+    
+    // Load tasa de cambio
+    const cargarTasaCambio = async () => {
+      try {
+        const response = await fetch('/api/tasas');
+        const result = await response.json();
+        if (Array.isArray(result) && result.length > 0) {
+          setUltimaTasa(result[0].tasa);
+        }
+      } catch (error) {
+        console.error('Error cargando tasa de cambio:', error);
+      }
+    };
+    cargarTasaCambio();
     
     // Check if jornada is active
     const checkJornadaActiva = async () => {
@@ -462,6 +477,21 @@ function LobbyContent() {
           </div>
         </div>
       </header>
+
+      {/* Tasa de Cambio Card - Right side */}
+      {ultimaTasa > 0 && (
+        <div className="absolute right-4 top-20 z-40">
+          <div className="bg-gradient-to-r from-amber-500/20 to-yellow-500/20 backdrop-blur-xl rounded-xl border border-amber-500/30 px-4 py-2 shadow-lg">
+            <div className="flex items-center gap-2">
+              <span className="text-amber-400">💵</span>
+              <span className="text-amber-200/80 text-sm font-medium">Tasa del Día:</span>
+              <span className="text-amber-400 font-bold text-lg">
+                Bs. {ultimaTasa.toFixed(2)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="p-6">
         {/* Filter Tabs */}
