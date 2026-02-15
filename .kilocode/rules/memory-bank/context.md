@@ -63,6 +63,10 @@ Complete motel management system with authentication, dashboard, room management
 - [x] API route: `/api/limpieza` for iniciar/finalizar cleaning operations
 - [x] Updated lobby cards to be taller and square (aspect-square)
 - [x] **Timer para Limpieza** - Ahora muestra tiempo transcurrido y hora de inicio cuando está en limpieza
+- [x] **Validación de Jornada Activa** - Sistema requiere jornada activa para operaciones de habitaciones
+- [x] Nueva función helper `validarJornadaActiva()` en `src/lib/jornada.ts`
+- [x] API valida jornada: check-in, limpieza, reservas, checkout, cambiar estado habitación
+- [x] UI lobby muestra alerta si no hay jornada activa antes de operaciones
 
 ## Current Structure
 
