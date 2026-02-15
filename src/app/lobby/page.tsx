@@ -217,7 +217,7 @@ function LobbyContent() {
       alert('Debe iniciar una jornada de trabajo antes de realizar check-in');
       return;
     }
-    router.push(`/reservas/nueva?habitacion=${habitacion.id}`);
+    router.push(`/checkin/${habitacion.id}?habitacion_id=${habitacion.id}`);
   };
 
   const handleCheckOut = async (habitacionId: number) => {
