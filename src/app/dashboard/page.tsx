@@ -174,6 +174,7 @@ export default function DashboardPage() {
   const [jornadas, setJornadas] = useState<any[]>([]);
   const [jornadaActiva, setJornadaActiva] = useState<any>(null);
   const [showModalJornada, setShowModalJornada] = useState(false);
+  const [showModalFinalizarJornada, setShowModalFinalizarJornada] = useState(false);
   const [stepJornada, setStepJornada] = useState(1); // 1: credenciales, 2: datos jornada
   const [credencialesJornada, setCredencialesJornada] = useState({ username: '', password: '' });
   const [datosJornada, setDatosJornada] = useState({
@@ -182,6 +183,11 @@ export default function DashboardPage() {
     monto_bs: 0,
     monto_usd: 0,
     tasa_cambio: 0
+  });
+  const [datosCierre, setDatosCierre] = useState({
+    monto_bs: 0,
+    monto_usd: 0,
+    observaciones: ''
   });
   const [errorJornada, setErrorJornada] = useState('');
   const [loadingJornada, setLoadingJornada] = useState(false);
@@ -308,7 +314,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const verificarJornadaActiva = async () => {
       try {
-        const response = await fetch('/api/jornada/validar');
+        const response = await fetch('/api/jornada'); // Este endpoint devuelve { jornadaActiva: object } o { jornadaActiva: null }
         const result = await response.json();
         if (result.jornadaActiva) {
           setJornadaActiva(result.jornadaActiva);
@@ -465,7 +471,12 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2">
               {jornadaActiva ? (
                 <button
-                  onClick={() => alert('Función de finalizar jornadacoming soon')}
+                  onClick={() => {
+                    setShowModalFinalizarJornada(true);
+                    setCredencialesJornada({ username: '', password: '' });
+                    setDatosCierre({ monto_bs: 0, monto_usd: 0, observaciones: '' });
+                    setErrorJornada('');
+                  }}
                   className="px-4 py-2 rounded-lg bg-red-500/80 hover:bg-red-500 text-white font-medium transition-all flex items-center gap-2"
                 >
                   <span>🔴</span>
@@ -1029,6 +1040,124 @@ export default function DashboardPage() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal Finalizar Jornada */}
+      {showModalFinalizarJornada && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800/90 backdrop-blur-xl rounded-2xl border border-white/20 w-full max-w-lg p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-white">🔴 Finalizar Jornada</h2>
+              <button
+                onClick={() => setShowModalFinalizarJornada(false)}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {jornadaActiva && (
+              <div className="mb-6 p-4 bg-blue-500/20 border border-blue-500/50 rounded-xl">
+                <p className="text-blue-200"><span className="font-bold">Jornada activa:</span> {jornadaActiva.jornada_nombre}</p>
+                <p className="text-blue-200"><span className="font-bold">Usuario:</span> {jornadaActiva.usuario_nombre}</p>
+                <p className="text-blue-200"><span className="font-bold">Fecha:</span> {jornadaActiva.fecha_trabajo}</p>
+                <p className="text-blue-200"><span className="font-bold">Hora inicio:</span> {jornadaActiva.hora_inicio}</p>
+              </div>
+            )}
+
+            {errorJornada && (
+              <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
+                <p className="text-red-300 text-sm text-center">{errorJornada}</p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Monto cierre (Bs)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={datosCierre.monto_bs}
+                    onChange={(e) => setDatosCierre({ ...datosCierre, monto_bs: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Monto cierre ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={datosCierre.monto_usd}
+                    onChange={(e) => setDatosCierre({ ...datosCierre, monto_usd: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Observaciones</label>
+                <textarea
+                  value={datosCierre.observaciones}
+                  onChange={(e) => setDatosCierre({ ...datosCierre, observaciones: e.target.value })}
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="Observaciones adicionales (opcional)"
+                  rows={3}
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowModalFinalizarJornada(false)}
+                  className="flex-1 px-4 py-3 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!jornadaActiva?.id) {
+                      setErrorJornada("No hay jornada activa");
+                      return;
+                    }
+                    setLoadingJornada(true);
+                    try {
+                      const response = await fetch("/api/jornada/finalizar", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          jornada_id: jornadaActiva.id,
+                          monto_cierre_bs: datosCierre.monto_bs,
+                          monto_cierre_usd: datosCierre.monto_usd,
+                          observaciones: datosCierre.observaciones,
+                          username: credencialesJornada.username,
+                          password: credencialesJornada.password
+                        })
+                      });
+                      const result = await response.json();
+                      if (result.success) {
+                        setJornadaActiva(null);
+                        setShowModalFinalizarJornada(false);
+                        alert("Jornada finalizada correctamente");
+                      } else {
+                        setErrorJornada(result.error || "Error al finalizar jornada");
+                      }
+                    } catch (err) {
+                      setErrorJornada("Error al finalizar jornada");
+                    } finally {
+                      setLoadingJornada(false);
+                    }
+                  }}
+                  disabled={loadingJornada}
+                  className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-500 transition-colors disabled:opacity-50"
+                >
+                  {loadingJornada ? "Finalizando..." : "Finalizar Jornada"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
