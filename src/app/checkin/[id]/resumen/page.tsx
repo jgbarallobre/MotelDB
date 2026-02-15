@@ -18,6 +18,13 @@ interface ReservaResultado {
   cambio: number;
 }
 
+const steps = [
+  { id: 1, name: 'Tipo de Estadía', icon: '⏱️' },
+  { id: 2, name: 'Datos del Cliente', icon: '👤' },
+  { id: 3, name: 'Pago', icon: '💳' },
+  { id: 4, name: 'Confirmación', icon: '✅' },
+];
+
 function ResumenContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -38,6 +45,7 @@ function ResumenContent() {
   const [loading, setLoading] = useState(false);
   const [imprimiendo, setImprimiendo] = useState(false);
   const [tipoImpresion, setTipoImpresion] = useState<'prefactura' | 'factura' | null>(null);
+  const [tiempoRestante, setTiempoRestante] = useState<string>('');
 
   const formatearFecha = (fecha: string) => {
     return new Date(fecha).toLocaleString('es-VE', {
@@ -48,6 +56,33 @@ function ResumenContent() {
       minute: '2-digit'
     });
   };
+
+  // Timer en tiempo real
+  useEffect(() => {
+    if (!resultado) return;
+    
+    const actualizarTiempo = () => {
+      const ahora = new Date();
+      const salida = new Date(resultado.fecha_salida);
+      const diff = salida.getTime() - ahora.getTime();
+      
+      if (diff <= 0) {
+        setTiempoRestante('Tiempo completado');
+        return;
+      }
+      
+      const horas = Math.floor(diff / (1000 * 60 * 60));
+      const minutos = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const segundos = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      setTiempoRestante(`${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`);
+    };
+    
+    actualizarTiempo();
+    const intervalo = setInterval(actualizarTiempo, 1000);
+    
+    return () => clearInterval(intervalo);
+  }, [resultado]);
 
   const calcularTiempoRestante = () => {
     if (!resultado) return '';
@@ -106,13 +141,51 @@ function ResumenContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
-      <header className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-xl border-b border-green-500/30">
-        <div className="max-w-4xl mx-auto px-4 py-6 text-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <span className="text-4xl">✅</span>
+      <header className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-xl border-b border-green-500/30 sticky top-0 z-50">
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          {/* Stepper */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-10" />
+            
+            <div className="flex items-center gap-1">
+              {steps.map((s, index) => (
+                <div key={s.id} className="flex items-center">
+                  <div className="flex flex-col items-center">
+                    <div 
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold transition-all duration-300 ${
+                        4 >= s.id 
+                          ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/30' 
+                          : 'bg-white/10 text-slate-500'
+                      }`}
+                    >
+                      {s.icon}
+                    </div>
+                    <span className={`text-[10px] mt-1 hidden sm:block ${4 >= s.id ? 'text-white' : 'text-slate-500'}`}>
+                      {s.name}
+                    </span>
+                  </div>
+                  {index < steps.length - 1 && (
+                    <div className={`w-8 h-0.5 mx-1 transition-colors duration-300 ${4 > s.id ? 'bg-green-500' : 'bg-white/20'}`} />
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            <Link href="/lobby" className="p-2 hover:bg-white/10 rounded-lg transition-all duration-200 hover:scale-105">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+            </Link>
           </div>
-          <h1 className="text-3xl font-bold text-white">Check-in Completado</h1>
-          <p className="text-green-400 mt-2">La habitación ha sido ocupada exitosamente</p>
+
+          {/* Success Message */}
+          <div className="text-center pb-2">
+            <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg shadow-green-500/30">
+              <span className="text-3xl">✅</span>
+            </div>
+            <h1 className="text-2xl font-bold text-white">Check-in Completado</h1>
+            <p className="text-green-400 text-sm">La habitación ha sido ocupada exitosamente</p>
+          </div>
         </div>
       </header>
 
@@ -167,9 +240,9 @@ function ResumenContent() {
             <div className="flex justify-between items-center p-4 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-xl border border-yellow-500/30">
               <div>
                 <p className="text-yellow-400 text-sm">Tiempo Restante</p>
-                <p className="text-white font-bold text-xl">{calcularTiempoRestante()}</p>
+                <p className="text-white font-bold text-2xl">{tiempoRestante || calcularTiempoRestante()}</p>
               </div>
-              <span className="text-2xl">⏳</span>
+              <span className="text-3xl">⏱️</span>
             </div>
           </div>
         </div>

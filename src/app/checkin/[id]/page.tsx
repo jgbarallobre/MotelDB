@@ -30,6 +30,13 @@ interface Habitacion {
   descripcion: string;
 }
 
+const steps = [
+  { id: 1, name: 'Tipo de Estadía', icon: '⏱️' },
+  { id: 2, name: 'Datos del Cliente', icon: '👤' },
+  { id: 3, name: 'Pago', icon: '💳' },
+  { id: 4, name: 'Confirmación', icon: '✅' },
+];
+
 function CheckinContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -218,36 +225,56 @@ function CheckinContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
-      <header className="bg-white/5 backdrop-blur-xl border-b border-white/10">
+      <header className="bg-white/5 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50">
         <div className="max-w-3xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link href="/lobby" className="p-2 hover:bg-white/10 rounded-lg transition-all duration-200 hover:scale-105">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <span className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center text-2xl shadow-lg shadow-green-500/30">
-                    🏠
-                  </span>
-                  Nueva Reserva
-                </h1>
-                <p className="text-slate-400 text-sm">Habitación {habitacion?.numero} • {habitacion?.descripcion}</p>
-              </div>
+          {/* Stepper */}
+          <div className="flex items-center justify-between mb-4">
+            <Link href="/lobby" className="p-2 hover:bg-white/10 rounded-lg transition-all duration-200 hover:scale-105">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </Link>
+            
+            <div className="flex items-center gap-1">
+              {steps.map((s, index) => (
+                <div key={s.id} className="flex items-center">
+                  <div className="flex flex-col items-center">
+                    <div 
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold transition-all duration-300 ${
+                        step >= s.id 
+                          ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/30' 
+                          : 'bg-white/10 text-slate-500'
+                      }`}
+                    >
+                      {step > s.id ? '✓' : s.icon}
+                    </div>
+                    <span className={`text-[10px] mt-1 hidden sm:block ${step >= s.id ? 'text-white' : 'text-slate-500'}`}>
+                      {s.name}
+                    </span>
+                  </div>
+                  {index < steps.length - 1 && (
+                    <div className={`w-8 h-0.5 mx-1 transition-colors duration-300 ${step > s.id ? 'bg-blue-500' : 'bg-white/20'}`} />
+                  )}
+                </div>
+              ))}
             </div>
-            <div className="flex items-center gap-2">
-              {/* Step Indicator */}
-              <div className="flex items-center gap-1">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${step === 1 ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/50' : 'bg-green-500 text-white shadow-lg shadow-green-500/50'}`}>
-                  {step === 1 ? '1' : '✓'}
-                </div>
-                <div className="w-8 h-0.5 bg-white/20"></div>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${step === 2 ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/50' : step > 2 ? 'bg-green-500 text-white' : 'bg-white/10 text-slate-400'}`}>
-                  2
-                </div>
-              </div>
+            
+            <div className="w-10" />
+          </div>
+
+          {/* Room Info */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-white flex items-center gap-2">
+                <span className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center text-lg shadow-lg shadow-green-500/30">
+                  🏠
+                </span>
+               Nueva Reserva
+              </h1>
+              <p className="text-slate-400 text-sm">Habitación {habitacion?.numero} • {habitacion?.descripcion}</p>
+            </div>
+            <div className="px-3 py-1.5 bg-green-500/20 rounded-full border border-green-500/30">
+              <span className="text-green-400 font-medium text-xs">{habitacion?.estado}</span>
             </div>
           </div>
         </div>
@@ -255,24 +282,6 @@ function CheckinContent() {
 
       <main className="max-w-3xl mx-auto px-4 py-6 space-y-4">
         
-        {/* Habitacion Info - Siempre visible pero más pequeña */}
-        <div className="bg-gradient-to-r from-slate-800/80 to-slate-800/60 backdrop-blur-xl rounded-2xl border border-white/10 p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-2xl shadow-lg shadow-indigo-500/30">
-                🏠
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-white">Habitación #{habitacion?.numero}</h2>
-                <p className="text-slate-400 text-sm">{habitacion?.tipo} • {habitacion?.descripcion}</p>
-              </div>
-            </div>
-            <div className="px-4 py-2 bg-green-500/20 rounded-full border border-green-500/30">
-              <span className="text-green-400 font-medium text-sm">{habitacion?.estado}</span>
-            </div>
-          </div>
-        </div>
-
         {/* Paso 1: Tipo de Estadía */}
         {step === 1 && (
           <div className="space-y-4 animate-fadeIn">

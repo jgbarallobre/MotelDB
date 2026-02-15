@@ -8,6 +8,7 @@ interface MetodoPago {
   id: string;
   nombre: string;
   icono: string;
+  color: string;
 }
 
 interface CheckinData {
@@ -26,6 +27,13 @@ interface CheckinData {
   tasaCambio: number;
 }
 
+const steps = [
+  { id: 1, name: 'Tipo de Estadía', icon: '⏱️' },
+  { id: 2, name: 'Datos del Cliente', icon: '👤' },
+  { id: 3, name: 'Pago', icon: '💳' },
+  { id: 4, name: 'Confirmación', icon: '✅' },
+];
+
 function PagoContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -40,11 +48,11 @@ function PagoContent() {
 
   // Métodos de pago disponibles
   const metodosPago: MetodoPago[] = [
-    { id: 'Efectivo', nombre: 'Efectivo', icono: '💵' },
-    { id: 'Tarjeta', nombre: 'Tarjeta Débito/Crédito', icono: '💳' },
-    { id: 'Transferencia', nombre: 'Transferencia', icono: '🏦' },
-    { id: 'Yape', nombre: 'Yape', icono: '📱' },
-    { id: 'Plin', nombre: 'Plin', icono: '📱' },
+    { id: 'Efectivo', nombre: 'Efectivo', icono: '💵', color: 'from-green-500 to-emerald-600' },
+    { id: 'Tarjeta', nombre: 'Tarjeta', icono: '💳', color: 'from-blue-500 to-cyan-600' },
+    { id: 'Transferencia', nombre: 'Transferencia', icono: '🏦', color: 'from-indigo-500 to-purple-600' },
+    { id: 'Yape', nombre: 'Yape', icono: '📱', color: 'from-pink-500 to-rose-600' },
+    { id: 'Plin', nombre: 'Plin', icono: '🔵', color: 'from-cyan-500 to-blue-600' },
   ];
 
   useEffect(() => {
@@ -147,24 +155,53 @@ function PagoContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
-      <header className="bg-white/5 backdrop-blur-xl border-b border-white/10">
+      <header className="bg-white/5 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-4">
+          {/* Stepper */}
+          <div className="flex items-center justify-between mb-4">
+            <Link href={`/checkin/${habitacionId}`} className="p-2 hover:bg-white/10 rounded-lg transition-all duration-200 hover:scale-105">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </Link>
+            
+            <div className="flex items-center gap-1">
+              {steps.map((s, index) => (
+                <div key={s.id} className="flex items-center">
+                  <div className="flex flex-col items-center">
+                    <div 
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold transition-all duration-300 ${
+                        3 >= s.id 
+                          ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/30' 
+                          : 'bg-white/10 text-slate-500'
+                      }`}
+                    >
+                      {3 > s.id ? s.icon : s.id === 3 ? '✓' : s.id}
+                    </div>
+                    <span className={`text-[10px] mt-1 hidden sm:block ${3 >= s.id ? 'text-white' : 'text-slate-500'}`}>
+                      {s.name}
+                    </span>
+                  </div>
+                  {index < steps.length - 1 && (
+                    <div className={`w-8 h-0.5 mx-1 transition-colors duration-300 ${3 > s.id ? 'bg-blue-500' : 'bg-white/20'}`} />
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            <div className="w-10" />
+          </div>
+
+          {/* Title */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link href={`/checkin/${habitacionId}`} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <span className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center text-2xl">
-                    💳
-                  </span>
-                  Selección de Pago
-                </h1>
-                <p className="text-slate-400 text-sm">Habitación {checkinData?.habitacion_id}</p>
-              </div>
+            <div>
+              <h1 className="text-xl font-bold text-white flex items-center gap-2">
+                <span className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center text-lg shadow-lg shadow-green-500/30">
+                  💳
+                </span>
+                Selección de Pago
+              </h1>
+              <p className="text-slate-400 text-sm">Habitación {checkinData?.habitacion_id}</p>
             </div>
           </div>
         </div>
@@ -205,21 +242,21 @@ function PagoContent() {
           
           <p className="text-slate-400 text-sm mb-4">Seleccione una o varias formas de pago:</p>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
             {metodosPago.map((metodo) => {
               const seleccionado = pagos.some(p => p.metodo_pago === metodo.id);
               return (
                 <button
                   key={metodo.id}
                   onClick={() => toggleMetodoPago(metodo.id)}
-                  className={`p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 ${
+                  className={`p-3 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-1 ${
                     seleccionado
-                      ? 'bg-blue-500/20 border-blue-500'
+                      ? `bg-gradient-to-br ${metodo.color} border-transparent text-white shadow-lg`
                       : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
                   }`}
                 >
-                  <span className="text-3xl">{metodo.icono}</span>
-                  <span className={`font-medium ${seleccionado ? 'text-blue-400' : 'text-white'}`}>
+                  <span className="text-2xl">{metodo.icono}</span>
+                  <span className={`font-medium text-sm ${seleccionado ? 'text-white' : 'text-white'}`}>
                     {metodo.nombre}
                   </span>
                 </button>
