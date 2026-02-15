@@ -208,24 +208,21 @@ function PagoContent() {
               </h1>
               <p className="text-slate-400 text-sm">Habitación {checkinData?.habitacion_id}</p>
             </div>
+            {/* Tasa de Cambio */}
+            {checkinData?.tasaCambio && checkinData.tasaCambio > 0 && (
+              <div className="bg-gradient-to-r from-amber-500/20 to-yellow-500/20 backdrop-blur-xl rounded-xl border border-amber-500/30 px-3 py-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-amber-400">💵</span>
+                  <span className="text-amber-200/80 text-xs font-medium">Tasa:</span>
+                  <span className="text-amber-400 font-bold">
+                    Bs. {checkinData.tasaCambio.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>
-
-      {/* Tasa de Cambio Card - Left side */}
-      {checkinData?.tasaCambio && checkinData.tasaCambio > 0 && (
-        <div className="absolute left-4 top-24 z-40">
-          <div className="bg-gradient-to-r from-amber-500/20 to-yellow-500/20 backdrop-blur-xl rounded-xl border border-amber-500/30 px-4 py-2 shadow-lg">
-            <div className="flex items-center gap-2">
-              <span className="text-amber-400">💵</span>
-              <span className="text-amber-200/80 text-sm font-medium">Tasa del Día:</span>
-              <span className="text-amber-400 font-bold text-lg">
-                Bs. {checkinData.tasaCambio.toFixed(2)}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
 
       <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         {/* Resumen */}

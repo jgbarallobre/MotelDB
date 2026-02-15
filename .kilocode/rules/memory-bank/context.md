@@ -68,7 +68,7 @@ Complete motel management system with authentication, dashboard, room management
 - [x] API valida jornada: check-in, limpieza, reservas, checkout, cambiar estado habitación
 - [x] UI lobby muestra alerta si no hay jornada activa antes de operaciones
 - [x] **Fix Check-in Navigation** - Lobby ahora navega a `/checkin/[id]` en lugar de `/reservas/nueva`
-- [x] **Fix Posición Tarjeta Tasa de Cambio** - Agregado `relative` al container y ajustada posición a `right-4 top-24` en Dashboard, Lobby y páginas de Check-in
+- [x] **Fix Posición Tarjeta Tasa de Cambio a la Izquierda** - Movida la tarjeta de tasa de cambio al lado izquierdo (left-4) en Dashboard, Lobby, Check-in, Pago y Resumen
 
 ## Current Structure
 
@@ -127,6 +127,7 @@ SQL Server connection with status monitoring:
 | Date | Changes |
 |------|---------|
 | 2025-02-15 | **Fix Posición Tarjeta Tasa de Cambio** - Corregido posicionamiento de tarjeta (agregado relative al container, posicionada más a la derecha y arriba) |
+| 2025-02-15 | **Fix Posición Tarjeta Tasa de Cambio a la Izquierda** - Movida la tarjeta de tasa de cambio al lado izquierdo (left-4) en Dashboard, Lobby, Check-in, Pago y Resumen |
 | 2025-02-15 | **Fix Check-in Navigation** - Lobby ahora navega al nuevo flujo de Check-in moderno (/checkin/[id]) en lugar de la página antigua en blanco |
 | 2025-02-14 | **Fix Login Redirect** - Added loadingAuth state to prevent race condition between localStorage load and redirect |
 | 2025-02-14 | **UI/UX Visual Improvements** - Modern dark theme with glassmorphism, sidebar navigation, gradient cards, animations |

@@ -187,21 +187,20 @@ function ResumenContent() {
             <h1 className="text-2xl font-bold text-white">Check-in Completado</h1>
             <p className="text-green-400 text-sm">La habitación ha sido ocupada exitosamente</p>
           </div>
-        </div>
-      </header>
-
-      {/* Tasa de Cambio Card - Left side */}
-      <div className="absolute left-4 top-24 z-40">
-        <div className="bg-gradient-to-r from-amber-500/20 to-yellow-500/20 backdrop-blur-xl rounded-xl border border-amber-500/30 px-4 py-2 shadow-lg">
-          <div className="flex items-center gap-2">
-            <span className="text-amber-400">💵</span>
-            <span className="text-amber-200/80 text-sm font-medium">Tasa del Día:</span>
-            <span className="text-amber-400 font-bold text-lg">
-              {resultado?.tasaCambio ? `Bs. ${resultado.tasaCambio.toFixed(2)}` : 'N/A'}
-            </span>
+          {/* Tasa de Cambio */}
+          <div className="absolute right-4 top-20">
+            <div className="bg-gradient-to-r from-amber-500/20 to-yellow-500/20 backdrop-blur-xl rounded-xl border border-amber-500/30 px-3 py-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-amber-400">💵</span>
+                <span className="text-amber-200/80 text-xs font-medium">Tasa:</span>
+                <span className="text-amber-400 font-bold">
+                  {resultado?.tasaCambio ? `Bs. ${resultado.tasaCambio.toFixed(2)}` : 'N/A'}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </header>
 
       <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         {/* Datos de la Reserva */}
