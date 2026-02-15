@@ -158,7 +158,7 @@ function PagoContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative">
       {/* Header */}
       <header className="bg-white/5 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-4">
@@ -214,7 +214,7 @@ function PagoContent() {
 
       {/* Tasa de Cambio Card - Right side */}
       {checkinData?.tasaCambio && checkinData.tasaCambio > 0 && (
-        <div className="absolute right-8 top-40 z-40">
+        <div className="absolute right-4 top-24 z-40">
           <div className="bg-gradient-to-r from-amber-500/20 to-yellow-500/20 backdrop-blur-xl rounded-xl border border-amber-500/30 px-4 py-2 shadow-lg">
             <div className="flex items-center gap-2">
               <span className="text-amber-400">💵</span>
