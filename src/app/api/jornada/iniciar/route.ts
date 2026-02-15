@@ -50,8 +50,17 @@ export async function POST(request: Request) {
 
     const user = userResult.recordset[0];
 
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    // Verify password - support both bcrypt hash and plain text for compatibility
+    let isValidPassword = false;
+    
+    // First try bcrypt (for hashed passwords)
+    if (user.password_hash.startsWith('$2')) {
+      isValidPassword = await bcrypt.compare(password, user.password_hash);
+    } else {
+      // Fall back to plain text comparison (for legacy passwords)
+      isValidPassword = (password === user.password_hash);
+    }
+    
     if (!isValidPassword) {
       return NextResponse.json(
         { error: 'Contraseña incorrecta' },
