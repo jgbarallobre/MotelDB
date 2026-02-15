@@ -528,6 +528,82 @@ END
 GO
 
 -- ============================================================================
+-- TABLA: HistorialLimpieza
+-- Descripción: Registra el historial de limpieza y mantenimiento de habitaciones
+-- ============================================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'HistorialLimpieza')
+BEGIN
+    CREATE TABLE HistorialLimpieza (
+        id INT PRIMARY KEY IDENTITY(1,1),
+        habitacion_id INT NOT NULL,
+        tipo_accion VARCHAR(20) NOT NULL CHECK (tipo_accion IN ('Limpieza', 'Mantenimiento')),
+        fecha_inicio DATETIME2 NOT NULL DEFAULT GETDATE(),
+        fecha_fin DATETIME2,
+        usuario_inicio_id INT,
+        usuario_fin_id INT,
+        observaciones NVARCHAR(MAX),
+        duracion_minutos INT, -- Calculated when finished
+        CONSTRAINT FK_HistorialLimpieza_Habitaciones FOREIGN KEY (habitacion_id) REFERENCES Habitaciones(id),
+        CONSTRAINT FK_HistorialLimpieza_UsuarioInicio FOREIGN KEY (usuario_inicio_id) REFERENCES Usuarios(id),
+        CONSTRAINT FK_HistorialLimpieza_UsuarioFin FOREIGN KEY (usuario_fin_id) REFERENCES Usuarios(id)
+    );
+    PRINT '✅ Tabla HistorialLimpieza creada';
+END
+GO
+
+-- ============================================================================
+-- TABLA: TasasCambio
+-- Descripción: Historial de tasas de cambio USD/Bs
+-- ============================================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'TasasCambio')
+BEGIN
+    CREATE TABLE TasasCambio (
+        id INT PRIMARY KEY IDENTITY(1,1),
+        tasa DECIMAL(10,2) NOT NULL CHECK (tasa > 0),
+        fecha_registro DATETIME2 DEFAULT GETDATE(),
+        usuario_registro_id INT,
+        observaciones NVARCHAR(MAX),
+        CONSTRAINT FK_TasasCambio_Usuarios FOREIGN KEY (usuario_registro_id) REFERENCES Usuarios(id)
+    );
+    
+    -- Insertar tasa inicial de ejemplo
+    INSERT INTO TasasCambio (tasa, observaciones)
+    VALUES (36.50, 'Tasa inicial');
+    
+    PRINT '✅ Tabla TasasCambio creada';
+END
+GO
+
+-- ============================================================================
+-- TABLA: JornadasAbiertas
+-- Descripción: Control de jornadas/trabajos activos del sistema
+-- ============================================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'JornadasAbiertas')
+BEGIN
+    CREATE TABLE JornadasAbiertas (
+        id INT PRIMARY KEY IDENTITY(1,1),
+        jornada_id INT NOT NULL, -- FK a Jornadas (catálogo)
+        usuario_id INT NOT NULL, -- Usuario que inicia la jornada
+        fecha_trabajo DATE NOT NULL,
+        hora_inicio DATETIME2 NOT NULL DEFAULT GETDATE(),
+        hora_fin DATETIME2,
+        -- Montos de apertura
+        monto_apertura_bs DECIMAL(12,2) DEFAULT 0,
+        monto_apertura_usd DECIMAL(12,2) DEFAULT 0,
+        tasa_cambio DECIMAL(10,2) NOT NULL,
+        -- Estado
+        estado VARCHAR(20) NOT NULL DEFAULT 'Abierta' CHECK (estado IN ('Abierta', 'Cerrada')),
+        -- Observaciones
+        observaciones NVARCHAR(MAX),
+        CONSTRAINT FK_JornadasAbiertas_Jornadas FOREIGN KEY (jornada_id) REFERENCES Jornadas(id),
+        CONSTRAINT FK_JornadasAbiertas_Usuarios FOREIGN KEY (usuario_id) REFERENCES Usuarios(id)
+    );
+    
+    PRINT '✅ Tabla JornadasAbiertas creada';
+END
+GO
+
+-- ============================================================================
 -- VISTAS ÚTILES
 -- ============================================================================
 

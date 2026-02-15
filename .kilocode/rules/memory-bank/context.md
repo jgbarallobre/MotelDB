@@ -57,6 +57,12 @@ Complete motel management system with authentication, dashboard, room management
 - [x] API `/api/checkin` - Complete check-in processing with payment
 - [x] API `/api/clientes/buscar` - Search client by document
 - [x] Added tasaCambio sample data to database init.sql
+- [x] **Limpieza/Mantenimiento Enhanced** - Buttons for cleaning and maintenance on available rooms
+- [x] Timer shows elapsed time when room is in maintenance mode
+- [x] Database table: `HistorialLimpieza` tracks cleaning/maintenance with user and duration
+- [x] API route: `/api/limpieza` for iniciar/finalizar cleaning operations
+- [x] Updated lobby cards to be taller and square (aspect-square)
+- [x] **Timer para Limpieza** - Ahora muestra tiempo transcurrido y hora de inicio cuando está en limpieza
 
 ## Current Structure
 
@@ -83,6 +89,7 @@ Complete motel management system with authentication, dashboard, room management
 | `src/app/api/jornadas/` | Work shifts CRUD API | ✅ Complete |
 | `src/app/api/configuracion/` | Motel settings API | ✅ Complete |
 | `src/app/api/db-status/` | Database connection check | ✅ Complete |
+| `src/app/api/limpieza/` | Cleaning/maintenance operations API | ✅ **NEW** |
 
 ## Current Focus
 
@@ -113,7 +120,11 @@ SQL Server connection with status monitoring:
 
 | Date | Changes |
 |------|---------|
+<<<<<<< HEAD
 | 2025-02-14 | **Check-in Flow** - Complete check-in system with payment, summary, and room status update |
+=======
+| 2025-02-14 | **Limpieza/Mantenimiento Enhanced** - Buttons for cleaning/maintenance on available rooms, timer for maintenance, HistorialLimpieza table |
+>>>>>>> c6a2a9aed6229ff7557fff6352f57e08174ba949
 | 2025-02-14 | **Fix Login Redirect** - Added loadingAuth state to prevent race condition between localStorage load and redirect |
 | 2025-02-14 | **UI/UX Visual Improvements** - Modern dark theme with glassmorphism, sidebar navigation, gradient cards, animations |
 | 2025-02-14 | **Impresoras Fiscales** - Configuración de impresoras (Fiscal, No Fiscal, Ticketera) |
