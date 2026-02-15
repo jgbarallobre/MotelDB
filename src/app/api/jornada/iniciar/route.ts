@@ -180,7 +180,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ 
       success: true, 
-      jornada: jornadaResult.recordset[0] 
+      jornadaActiva: jornadaResult.recordset[0] 
     });
   } catch (error) {
     console.error('Error starting jornada:', error);

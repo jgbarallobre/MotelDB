@@ -56,7 +56,7 @@ export default function Home() {
       try {
         const response = await fetch('/api/jornada');
         const result = await response.json();
-        setJornadaActiva(result.jornada);
+        setJornadaActiva(result.jornadaActiva);
       } catch (error) {
         console.error('Error checking jornada:', error);
       } finally {

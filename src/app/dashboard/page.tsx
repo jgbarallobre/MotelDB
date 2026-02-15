@@ -1020,7 +1020,7 @@ export default function DashboardPage() {
                         });
                         const result = await response.json();
                         if (result.success) {
-                          setJornadaActiva(result.jornada);
+                          setJornadaActiva(result.jornadaActiva);
                           setShowModalJornada(false);
                           alert('Jornada iniciada correctamente');
                         } else {
