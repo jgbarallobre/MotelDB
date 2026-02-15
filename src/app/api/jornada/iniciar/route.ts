@@ -32,14 +32,26 @@ export async function POST(request: Request) {
 
     const pool = await getConnection();
 
+    // Debug: Log what we're receiving
+    console.log('[Jornada Iniciar] Username:', username, 'Password length:', password?.length);
+
     // First, validate user credentials
     const userResult = await pool.request()
       .input('username', username)
       .query(`
         SELECT id, username, password_hash, nombre, rol
-        FROM usuarios
+        FROM Usuarios
         WHERE username = @username AND activo = 1
       `);
+
+    console.log('[Jornada Iniciar] User found:', userResult.recordset.length > 0);
+    if (userResult.recordset.length > 0) {
+      console.log('[Jornada Iniciar] User data:', {
+        username: userResult.recordset[0].username,
+        password_hash: userResult.recordset[0].password_hash,
+        isBcrypt: userResult.recordset[0].password_hash?.startsWith('$2')
+      });
+    }
 
     if (userResult.recordset.length === 0) {
       return NextResponse.json(
@@ -52,14 +64,21 @@ export async function POST(request: Request) {
 
     // Verify password - support both bcrypt hash and plain text for compatibility
     let isValidPassword = false;
+    const storedPassword = user.password_hash;
     
     // First try bcrypt (for hashed passwords)
-    if (user.password_hash.startsWith('$2')) {
-      isValidPassword = await bcrypt.compare(password, user.password_hash);
+    if (storedPassword && storedPassword.startsWith('$2')) {
+      console.log('[Jornada Iniciar] Verifying with bcrypt');
+      isValidPassword = await bcrypt.compare(password, storedPassword);
+      console.log('[Jornada Iniciar] Bcrypt result:', isValidPassword);
     } else {
       // Fall back to plain text comparison (for legacy passwords)
-      isValidPassword = (password === user.password_hash);
+      console.log('[Jornada Iniciar] Verifying with plain text');
+      console.log('[Jornada Iniciar] Stored:', storedPassword, 'Input:', password, 'Match:', password === storedPassword);
+      isValidPassword = (password === storedPassword);
     }
+    
+    console.log('[Jornada Iniciar] Password valid:', isValidPassword);
     
     if (!isValidPassword) {
       return NextResponse.json(
