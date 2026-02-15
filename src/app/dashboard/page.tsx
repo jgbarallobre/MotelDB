@@ -64,6 +64,7 @@ const maestroMenu: MenuItem[] = [
   { label: 'Clientes / Huéspedes', icon: '👤', path: '/clientes', color: 'bg-cyan-500' },
   { label: 'Artículos', icon: '📦', path: '/articulos', color: 'bg-amber-500' },
   { label: 'Departamentos', icon: '🏢', path: '/departamentos', color: 'bg-teal-500' },
+    { label: 'Cambio de Tasa', icon: '💱', path: '/cambio-tasa', color: 'bg-yellow-500' },
 ];
 
 const lobbyMenu: MenuItem[] = [
