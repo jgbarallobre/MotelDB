@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getConnection } from '@/lib/db';
+import { validarJornadaActiva } from '@/lib/jornada';
 
 // POST - Realizar check-out
 export async function POST(
@@ -12,6 +13,16 @@ export async function POST(
     const { servicios_adicionales, metodo_pago } = body;
     
     const pool = await getConnection();
+    
+    // Validar que hay una jornada activa
+    const validacionJornada = await validarJornadaActiva();
+    if (!validacionJornada.valida) {
+      return NextResponse.json(
+        { success: false, error: validacionJornada.error },
+        { status: 403 }
+      );
+    }
+
     const transaction = pool.transaction();
     
     try {

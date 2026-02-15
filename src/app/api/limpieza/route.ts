@@ -2,6 +2,7 @@
 
 import { NextResponse } from 'next/server';
 import { getConnection } from '@/lib/db';
+import { validarJornadaActiva } from '@/lib/jornada';
 
 // GET - Obtener historial de limpieza por habitación
 export async function GET(request: Request) {
@@ -74,6 +75,15 @@ export async function POST(request: Request) {
     }
 
     pool = await getConnection();
+
+    // Validar que hay una jornada activa
+    const validacionJornada = await validarJornadaActiva();
+    if (!validacionJornada.valida) {
+      return NextResponse.json({
+        success: false,
+        error: validacionJornada.error
+      }, { status: 403 });
+    }
 
     if (accion === 'iniciar') {
       // Iniciar limpieza o mantenimiento

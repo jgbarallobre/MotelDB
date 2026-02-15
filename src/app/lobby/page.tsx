@@ -255,6 +255,12 @@ function LobbyContent() {
   };
 
   const handleCambiarEstado = async (habitacionId: number, nuevoEstado: string) => {
+    // Check if jornada is active
+    if (!jornadaActiva) {
+      alert('Debe iniciar una jornada de trabajo antes de cambiar el estado de una habitación');
+      return;
+    }
+
     if (!confirm(`¿Cambiar estado a "${nuevoEstado}"?`)) {
       return;
     }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getConnection } from '@/lib/db';
+import { validarJornadaActiva } from '@/lib/jornada';
 
 export async function GET(request: Request) {
   try {
@@ -94,7 +95,16 @@ export async function POST(request: Request) {
 
     await transaction.begin();
 
-    // 1. Verificar habitación disponible
+    // 1. Validar que hay una jornada activa
+    const validacionJornada = await validarJornadaActiva();
+    if (!validacionJornada.valida) {
+      return NextResponse.json(
+        { error: validacionJornada.error },
+        { status: 403 }
+      );
+    }
+
+    // 2. Verificar habitación disponible
     const habitacionResult = await transaction.request()
       .input('habitacion_id', habitacion_id)
       .query('SELECT * FROM Habitaciones WHERE id = @habitacion_id AND estado = \'Disponible\'');

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getConnection } from '@/lib/db';
+import { validarJornadaActiva } from '@/lib/jornada';
 
 // GET - Obtener una habitación específica
 export async function GET(
@@ -45,6 +46,16 @@ export async function PUT(
     const { numero, tipo, precio_hora, precio_noche, capacidad, descripcion, estado, activa } = body;
     
     const pool = await getConnection();
+    
+    // Validar que hay una jornada activa
+    const validacionJornada = await validarJornadaActiva();
+    if (!validacionJornada.valida) {
+      return NextResponse.json(
+        { success: false, error: validacionJornada.error },
+        { status: 403 }
+      );
+    }
+
     const result = await pool.request()
       .input('id', id)
       .input('numero', numero)
