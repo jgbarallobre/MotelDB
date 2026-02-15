@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -30,28 +30,17 @@ interface Habitacion {
   descripcion: string;
 }
 
-const steps = [
-  { id: 1, name: 'Tipo de Estadía', icon: '⏱️' },
-  { id: 2, name: 'Datos del Cliente', icon: '👤' },
-  { id: 3, name: 'Pago', icon: '💳' },
-  { id: 4, name: 'Confirmación', icon: '✅' },
-];
-
 function CheckinContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const habitacionId = searchParams.get('habitacion_id');
 
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   
   const [habitacion, setHabitacion] = useState<Habitacion | null>(null);
   const [tiposEstadia, setTiposEstadia] = useState<TipoEstadia[]>([]);
   const [tasaCambio, setTasaCambio] = useState<number>(1);
-  
-  // Estado para controlar el flujo
-  const [step, setStep] = useState<1 | 2>(1);
   
   const [tipoEstadiaSeleccionado, setTipoEstadiaSeleccionado] = useState<TipoEstadia | null>(null);
   const [cliente, setCliente] = useState<Cliente>({
@@ -147,18 +136,15 @@ function CheckinContent() {
     return tipoEstadiaSeleccionado.precio * tasaCambio;
   };
 
-  const validateStep1 = (): boolean => {
-    if (!tipoEstadiaSeleccionado) {
-      return false;
-    }
-    return true;
-  };
-
-  const validateStep2 = (): boolean => {
+  const validarFormulario = (): boolean => {
     const newErrors: { documento?: string; nombre?: string } = {};
     
+    if (!tipoEstadiaSeleccionado) {
+      newErrors.documento = 'Seleccione un tipo de estadía';
+    }
+    
     if (!cliente.documento) {
-      newErrors.documento = 'La cédula/RIF es requerido';
+      newErrors.documento = 'La cédula/RIF es requerida';
     } else if (!validarDocumento(cliente.documento)) {
       newErrors.documento = 'Formato inválido (V12345678)';
     }
@@ -171,18 +157,8 @@ function CheckinContent() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleContinuar = () => {
-    if (validateStep1()) {
-      setStep(2);
-    }
-  };
-
-  const handleVolver = () => {
-    setStep(1);
-  };
-
-  const handlePagar = () => {
-    if (!validateStep2()) {
+  const handleContinuarAPago = () => {
+    if (!validarFormulario()) {
       return;
     }
 
@@ -227,7 +203,7 @@ function CheckinContent() {
       {/* Header */}
       <header className="bg-white/5 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50">
         <div className="max-w-3xl mx-auto px-4 py-4">
-          {/* Stepper */}
+          {/* Stepper - Simplificado */}
           <div className="flex items-center justify-between mb-4">
             <Link href="/lobby" className="p-2 hover:bg-white/10 rounded-lg transition-all duration-200 hover:scale-105">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -235,25 +211,28 @@ function CheckinContent() {
               </svg>
             </Link>
             
-            <div className="flex items-center gap-1">
-              {steps.map((s, index) => (
+            <div className="flex items-center gap-2">
+              {[
+                { id: 1, name: 'Datos', icon: '📝' },
+                { id: 2, name: 'Pago', icon: '💳' },
+              ].map((s, index) => (
                 <div key={s.id} className="flex items-center">
                   <div className="flex flex-col items-center">
                     <div 
                       className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold transition-all duration-300 ${
-                        step >= s.id 
+                        2 >= s.id 
                           ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/30' 
                           : 'bg-white/10 text-slate-500'
                       }`}
                     >
-                      {step > s.id ? '✓' : s.icon}
+                      {s.icon}
                     </div>
-                    <span className={`text-[10px] mt-1 hidden sm:block ${step >= s.id ? 'text-white' : 'text-slate-500'}`}>
+                    <span className={`text-[10px] mt-1 ${2 >= s.id ? 'text-white' : 'text-slate-500'}`}>
                       {s.name}
                     </span>
                   </div>
-                  {index < steps.length - 1 && (
-                    <div className={`w-8 h-0.5 mx-1 transition-colors duration-300 ${step > s.id ? 'bg-blue-500' : 'bg-white/20'}`} />
+                  {index < 1 && (
+                    <div className={`w-8 h-0.5 mx-1 transition-colors duration-300 ${2 > s.id ? 'bg-blue-500' : 'bg-white/20'}`} />
                   )}
                 </div>
               ))}
@@ -269,7 +248,7 @@ function CheckinContent() {
                 <span className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center text-lg shadow-lg shadow-green-500/30">
                   🏠
                 </span>
-               Nueva Reserva
+                Nueva Reserva
               </h1>
               <p className="text-slate-400 text-sm">Habitación {habitacion?.numero} • {habitacion?.descripcion}</p>
             </div>
@@ -282,227 +261,156 @@ function CheckinContent() {
 
       <main className="max-w-3xl mx-auto px-4 py-6 space-y-4">
         
-        {/* Paso 1: Tipo de Estadía */}
-        {step === 1 && (
-          <div className="space-y-4 animate-fadeIn">
-            <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
-              <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <span className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-lg">
-                  ⏱️
-                </span>
-                Selecciona el Tipo de Estadía
-              </h2>
-              
-              <div className="space-y-3">
-                {tiposEstadia.map((tipo, index) => (
-                  <button
-                    key={tipo.id}
-                    onClick={() => setTipoEstadiaSeleccionado(tipo)}
-                    className={`w-full p-4 rounded-xl border-2 text-left transition-all duration-300 hover:scale-[1.01] ${
-                      tipoEstadiaSeleccionado?.id === tipo.id
-                        ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-blue-500 shadow-lg shadow-blue-500/20'
-                        : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/30'
-                    }`}
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-4">
-                        {tipoEstadiaSeleccionado?.id === tipo.id ? (
-                          <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
-                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                            </svg>
-                          </div>
-                        ) : (
-                          <div className="w-6 h-6 rounded-full border-2 border-white/30"></div>
-                        )}
-                        <div>
-                          <h3 className="font-bold text-white text-lg">{tipo.nombre}</h3>
-                          <p className="text-slate-400 text-sm">{tipo.duracion_horas} horas • {tipo.descripcion}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-green-400">${tipo.precio.toFixed(2)}</p>
-                        <p className="text-slate-500 text-xs">BS {(tipo.precio * tasaCambio).toFixed(2)}</p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Resumen precio */}
-            {tipoEstadiaSeleccionado && (
-              <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-xl rounded-2xl border border-green-500/20 p-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-300">Monto a cancelar</span>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-green-400">${tipoEstadiaSeleccionado.precio.toFixed(2)}</p>
-                    <p className="text-slate-400 text-sm">BS {calcularPrecioBS().toFixed(2)}</p>
-                  </div>
+        {/* Tipo de Estadía */}
+        <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+          <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <span className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-lg">
+              ⏱️
+            </span>
+            Tipo de Estadía
+          </h2>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {tiposEstadia.map((tipo) => (
+              <button
+                key={tipo.id}
+                onClick={() => setTipoEstadiaSeleccionado(tipo)}
+                className={`p-3 rounded-xl border-2 text-center transition-all duration-300 hover:scale-[1.02] ${
+                  tipoEstadiaSeleccionado?.id === tipo.id
+                    ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-blue-500 shadow-lg shadow-blue-500/20'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/30'
+                }`}
+              >
+                <div>
+                  <h3 className="font-bold text-white text-sm">{tipo.nombre}</h3>
+                  <p className="text-slate-400 text-xs">{tipo.duracion_horas}h</p>
+                  <p className="text-green-400 font-bold text-lg mt-1">${tipo.precio.toFixed(2)}</p>
                 </div>
-              </div>
-            )}
-
-            {/* Botón Continuar */}
-            <button
-              onClick={handleContinuar}
-              disabled={!tipoEstadiaSeleccionado}
-              className="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl font-bold text-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
-            >
-              Continuar con Datos del Cliente
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
+              </button>
+            ))}
           </div>
-        )}
+        </div>
 
-        {/* Paso 2: Datos del Cliente */}
-        {step === 2 && (
-          <div className="space-y-4 animate-fadeIn">
-            <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
-              <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <span className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center text-lg">
-                  👤
-                </span>
-                Datos del Cliente / Huésped
-              </h2>
+        {/* Datos del Cliente */}
+        <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+          <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <span className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center text-lg">
+              👤
+            </span>
+            Datos del Cliente
+          </h2>
 
-              {clienteEncontrado && (
-                <div className="mb-4 p-3 bg-green-500/20 border border-green-500/30 rounded-xl flex items-center gap-2 animate-pulse">
-                  <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          {clienteEncontrado && (
+            <div className="mb-4 p-3 bg-green-500/20 border border-green-500/30 rounded-xl flex items-center gap-2">
+              <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-green-300 text-sm">Cliente encontrado</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Cédula / RIF <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <span className="text-green-300 text-sm">Cliente encontrado en nuestra base de datos</span>
-                </div>
+                </span>
+                <input
+                  type="text"
+                  value={cliente.documento}
+                  onChange={handleDocumentoChange}
+                  placeholder="V12345678"
+                  maxLength={9}
+                  className={`w-full pl-12 pr-12 py-3 bg-white/10 border rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${errors.documento ? 'border-red-500 bg-red-500/10' : 'border-white/20'}`}
+                />
+                {buscandoCliente && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                  </div>
+                )}
+              </div>
+              {errors.documento && (
+                <p className="text-red-400 text-xs mt-1">{errors.documento}</p>
               )}
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Cédula / RIF <span className="text-red-400">*</span>
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </span>
-                    <input
-                      type="text"
-                      value={cliente.documento}
-                      onChange={handleDocumentoChange}
-                      placeholder="V12345678"
-                      maxLength={9}
-                      className={`w-full pl-12 pr-12 py-3 bg-white/10 border rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${errors.documento ? 'border-red-500 bg-red-500/10' : 'border-white/20'}`}
-                    />
-                    {buscandoCliente && (
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
-                      </div>
-                    )}
-                  </div>
-                  {errors.documento && (
-                    <p className="text-red-400 text-xs mt-1">{errors.documento}</p>
-                  )}
-                  <p className="text-slate-500 text-xs mt-1">Comienza con V, J o G seguido de números</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Nombre del Cliente <span className="text-red-400">*</span>
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </span>
-                    <input
-                      type="text"
-                      value={cliente.nombre}
-                      onChange={(e) => {
-                        setCliente({ ...cliente, nombre: e.target.value });
-                        setErrors({ ...errors, nombre: undefined });
-                      }}
-                      placeholder="Nombre completo del huésped"
-                      className={`w-full pl-12 pr-4 py-3 bg-white/10 border rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${errors.nombre ? 'border-red-500 bg-red-500/10' : 'border-white/20'}`}
-                    />
-                  </div>
-                  {errors.nombre && (
-                    <p className="text-red-400 text-xs mt-1">{errors.nombre}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Teléfono (Opcional)
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                      </svg>
-                    </span>
-                    <input
-                      type="tel"
-                      value={cliente.telefono}
-                      onChange={(e) => setCliente({ ...cliente, telefono: e.target.value })}
-                      placeholder="Número de teléfono"
-                      className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
             </div>
 
-            {/* Resumen del monto */}
-            {tipoEstadiaSeleccionado && (
-              <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-xl rounded-2xl border border-green-500/20 p-4">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-slate-400 text-sm">{tipoEstadiaSeleccionado.nombre} ({tipoEstadiaSeleccionado.duracion_horas}h)</p>
-                    <p className="text-slate-500 text-xs">Tasa: BS {tasaCambio.toFixed(2)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-green-400">${tipoEstadiaSeleccionado.precio.toFixed(2)}</p>
-                    <p className="text-slate-400 text-sm">BS {calcularPrecioBS().toFixed(2)}</p>
-                  </div>
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Nombre <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </span>
+                <input
+                  type="text"
+                  value={cliente.nombre}
+                  onChange={(e) => {
+                    setCliente({ ...cliente, nombre: e.target.value });
+                    setErrors({ ...errors, nombre: undefined });
+                  }}
+                  placeholder="Nombre completo"
+                  className={`w-full pl-12 pr-4 py-3 bg-white/10 border rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${errors.nombre ? 'border-red-500 bg-red-500/10' : 'border-white/20'}`}
+                />
               </div>
-            )}
-
-            {/* Botones de Acción */}
-            <div className="flex gap-3">
-              <button
-                onClick={handleVolver}
-                className="flex-1 py-4 bg-white/10 border border-white/20 text-white rounded-2xl font-medium hover:bg-white/20 transition-all duration-300 flex items-center justify-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                Volver
-              </button>
-              
-              <button
-                onClick={() => alert('Módulo de Productos Tienda - Pendiente')}
-                className="px-6 py-4 bg-white/10 border border-white/20 text-white rounded-2xl font-medium hover:bg-white/20 transition-all duration-300 flex items-center justify-center"
-              >
-                <span className="text-xl">🛒</span>
-              </button>
-              
-              <button
-                onClick={handlePagar}
-                disabled={!tipoEstadiaSeleccionado || !cliente.documento || !cliente.nombre}
-                className="flex-[2] py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
-                Proceder al Pago
-              </button>
+              {errors.nombre && (
+                <p className="text-red-400 text-xs mt-1">{errors.nombre}</p>
+              )}
             </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Teléfono (Opcional)
+              </label>
+              <div className="relative max-w-sm">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                </span>
+                <input
+                  type="tel"
+                  value={cliente.telefono}
+                  onChange={(e) => setCliente({ ...cliente, telefono: e.target.value })}
+                  placeholder="Número de teléfono"
+                  className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all max-w-sm"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Resumen y Botón de Pago */}
+        {tipoEstadiaSeleccionado && (
+          <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-xl rounded-2xl border border-green-500/20 p-4">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <p className="text-white font-medium">{tipoEstadiaSeleccionado.nombre}</p>
+                <p className="text-slate-400 text-sm">{tipoEstadiaSeleccionado.duracion_horas} horas</p>
+              </div>
+              <div className="text-right">
+                <p className="text-3xl font-bold text-green-400">${tipoEstadiaSeleccionado.precio.toFixed(2)}</p>
+                <p className="text-slate-400 text-sm">BS {calcularPrecioBS().toFixed(2)}</p>
+              </div>
+            </div>
+            
+            <button
+              onClick={handleContinuarAPago}
+              disabled={!cliente.documento || !cliente.nombre || !validarDocumento(cliente.documento)}
+              className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+              Proceder al Pago
+            </button>
           </div>
         )}
 
@@ -512,13 +420,21 @@ function CheckinContent() {
 }
 
 export default function CheckinPage() {
-  return (
-    <Suspense fallback={
+  const searchParams = useSearchParams();
+  const habitacionId = searchParams.get('habitacion_id');
+  
+  if (!habitacionId) {
+    return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-6 text-center">
+          <p className="text-red-400 text-lg mb-4">Habitación no especificada</p>
+          <Link href="/lobby" className="text-blue-400 hover:text-blue-300">
+            ← Volver al Lobby
+          </Link>
+        </div>
       </div>
-    }>
-      <CheckinContent />
-    </Suspense>
-  );
+    );
+  }
+
+  return <CheckinContent />;
 }
