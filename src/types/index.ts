@@ -213,3 +213,24 @@ export interface ActualizarConfiguracion {
   color_principal?: string;
   color_secundario?: string;
 }
+
+// Tipos para Departamentos
+export interface Departamento {
+  id: number;
+  codigo: string;
+  descripcion: string;
+  activo: boolean;
+  fecha_creacion: Date;
+  fecha_actualizacion: Date;
+}
+
+export interface NuevoDepartamento {
+  codigo: string;
+  descripcion: string;
+}
+
+export interface ActualizarDepartamento {
+  codigo?: string;
+  descripcion?: string;
+  activo?: boolean;
+}

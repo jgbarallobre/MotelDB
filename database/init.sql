@@ -135,7 +135,34 @@ BEGIN
         fecha_creacion DATETIME2 DEFAULT GETDATE(),
         ultimo_acceso DATETIME2
     );
-    PRINT '✅ Tabla Usuarios creada';
+    PRINT '✅ Tabla Usuarios creadas';
+END
+GO
+
+-- ============================================================================
+-- TABLA: Departamentos
+-- Descripción: Catálogo de departamentos del motel
+-- ============================================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Departamentos')
+BEGIN
+    CREATE TABLE Departamentos (
+        id INT PRIMARY KEY IDENTITY(1,1),
+        codigo VARCHAR(4) NOT NULL UNIQUE,
+        descripcion VARCHAR(30) NOT NULL,
+        activo BIT DEFAULT 1,
+        fecha_creacion DATETIME2 DEFAULT GETDATE(),
+        fecha_actualizacion DATETIME2 DEFAULT GETDATE()
+    );
+    
+    -- Insertar departamentos de ejemplo
+    INSERT INTO Departamentos (codigo, descripcion) VALUES
+        ('D001', 'Administracion'),
+        ('D002', 'Recepcion'),
+        ('D003', 'Mantenimiento'),
+        ('D004', 'Limpieza'),
+        ('D005', 'Caja');
+    
+    PRINT '✅ Tabla Departamentos creada';
 END
 GO
 
