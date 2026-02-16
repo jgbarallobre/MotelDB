@@ -234,3 +234,27 @@ export interface ActualizarDepartamento {
   descripcion?: string;
   activo?: boolean;
 }
+
+// Tipos para Tipos de IVA
+export interface TipoIva {
+  id: number;
+  codigo: string;
+  descripcion: string;
+  valor: number;
+  activo: boolean;
+  fecha_creacion: Date;
+  fecha_actualizacion: Date;
+}
+
+export interface NuevoTipoIva {
+  codigo: string;
+  descripcion: string;
+  valor: number;
+}
+
+export interface ActualizarTipoIva {
+  codigo?: string;
+  descripcion?: string;
+  valor?: number;
+  activo?: boolean;
+}

@@ -59,12 +59,11 @@ const maestroMenu: MenuItem[] = [
   { label: 'Tipos de Estadía', icon: '🏨', path: '/tipos-estadia', color: 'bg-indigo-500' },
   { label: 'Días / Jornadas', icon: '⏰', path: '/jornadas', color: 'bg-violet-500' },
   { label: 'Usuarios y Permisos', icon: '👥', path: '/usuarios', color: 'bg-purple-500' },
-  { label: 'Configuración', icon: '⚙️', path: '/configuracion', color: 'bg-gray-500' },
-  { label: 'Impresoras', icon: '🖨️', path: '/impresoras', color: 'bg-zinc-500' },
+  { label: 'Maestro Configuración', icon: '⚙️', path: '/configuracion', color: 'bg-gray-500' },
   { label: 'Clientes / Huéspedes', icon: '👤', path: '/clientes', color: 'bg-cyan-500' },
   { label: 'Artículos', icon: '📦', path: '/articulos', color: 'bg-amber-500' },
   { label: 'Departamentos', icon: '🏢', path: '/departamentos', color: 'bg-teal-500' },
-    { label: 'Cambio de Tasa', icon: '💱', path: '/cambio-tasa', color: 'bg-yellow-500' },
+  { label: 'Cambio de Tasa', icon: '💱', path: '/cambio-tasa', color: 'bg-yellow-500' },
 ];
 
 const lobbyMenu: MenuItem[] = [

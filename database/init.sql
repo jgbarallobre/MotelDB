@@ -167,6 +167,32 @@ END
 GO
 
 -- ============================================================================
+-- TABLA: TiposIva
+-- Descripción: Catálogo de tipos de IVA/Impuestos del motel
+-- ============================================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'TiposIva')
+BEGIN
+    CREATE TABLE TiposIva (
+        id INT PRIMARY KEY IDENTITY(1,1),
+        codigo VARCHAR(2) NOT NULL UNIQUE,
+        descripcion VARCHAR(15) NOT NULL,
+        valor DECIMAL(10,2) NOT NULL CHECK (valor >= 0),
+        activo BIT DEFAULT 1,
+        fecha_creacion DATETIME2 DEFAULT GETDATE(),
+        fecha_actualizacion DATETIME2 DEFAULT GETDATE()
+    );
+    
+    -- Insertar tipos de IVA de ejemplo
+    INSERT INTO TiposIva (codigo, descripcion, valor) VALUES
+        ('01', 'IVA 16%', 16.00),
+        ('02', 'IVA 08%', 8.00),
+        ('03', 'EXCENTO', 0.00);
+    
+    PRINT '✅ Tabla TiposIva creada';
+END
+GO
+
+-- ============================================================================
 -- TABLA: LogAccesos
 -- Descripción: Registra los accesos al sistema para auditoría
 -- ============================================================================
