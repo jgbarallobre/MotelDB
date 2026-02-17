@@ -58,7 +58,6 @@ const maestroMenu: MenuItem[] = [
   { label: 'Habitaciones', icon: '📋', path: '/habitaciones', color: 'bg-blue-500' },
   { label: 'Tipos de Estadía', icon: '🏨', path: '/tipos-estadia', color: 'bg-indigo-500' },
   { label: 'Días / Jornadas', icon: '⏰', path: '/jornadas', color: 'bg-violet-500' },
-  { label: 'Usuarios y Permisos', icon: '👥', path: '/usuarios', color: 'bg-purple-500' },
   { label: 'Clientes / Huéspedes', icon: '👤', path: '/clientes', color: 'bg-cyan-500' },
   { label: 'Artículos', icon: '📦', path: '/articulos', color: 'bg-amber-500' },
   { label: 'Departamentos', icon: '🏢', path: '/departamentos', color: 'bg-teal-500' },
