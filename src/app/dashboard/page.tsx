@@ -59,7 +59,6 @@ const maestroMenu: MenuItem[] = [
   { label: 'Tipos de Estadía', icon: '🏨', path: '/tipos-estadia', color: 'bg-indigo-500' },
   { label: 'Días / Jornadas', icon: '⏰', path: '/jornadas', color: 'bg-violet-500' },
   { label: 'Usuarios y Permisos', icon: '👥', path: '/usuarios', color: 'bg-purple-500' },
-  { label: 'Maestro Configuración', icon: '⚙️', path: '/configuracion', color: 'bg-gray-500' },
   { label: 'Clientes / Huéspedes', icon: '👤', path: '/clientes', color: 'bg-cyan-500' },
   { label: 'Artículos', icon: '📦', path: '/articulos', color: 'bg-amber-500' },
   { label: 'Departamentos', icon: '🏢', path: '/departamentos', color: 'bg-teal-500' },
@@ -75,7 +74,7 @@ const lobbyMenu: MenuItem[] = [
 const mantenimientoMenu: MenuItem[] = [
   { label: 'Usuarios', icon: '👥', path: '/usuarios', color: 'bg-rose-500' },
   { label: 'Perfiles', icon: '🔐', path: '/perfiles', color: 'bg-pink-500' },
-  { label: 'Configuraciones', icon: '⚙️', path: '/configuracion', color: 'bg-orange-500' },
+  { label: 'Maestro Configuración', icon: '⚙️', path: '/configuracion', color: 'bg-orange-500' },
 ];
 
 function MenuSection({ title, items, icon }: MenuSectionProps) {
