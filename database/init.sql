@@ -167,6 +167,33 @@ END
 GO
 
 -- ============================================================================
+-- TABLA: Articulos
+-- Descripción: Catálogo de artículos/productos del motel (tienda/negocio)
+-- ============================================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Articulos')
+BEGIN
+    CREATE TABLE Articulos (
+        codigo VARCHAR(15) NOT NULL PRIMARY KEY,
+        descripcion VARCHAR(60) NOT NULL,
+        departamento VARCHAR(4) NOT NULL,
+        tipo_iva VARCHAR(2) NOT NULL DEFAULT '01',
+        precio1 DECIMAL(10,2) NOT NULL DEFAULT 0,
+        precio2 DECIMAL(10,2) NOT NULL DEFAULT 0,
+        precio3 DECIMAL(10,2) NOT NULL DEFAULT 0,
+        existencia DECIMAL(10,2) NOT NULL DEFAULT 0,
+        inactivo BIT DEFAULT 0,
+        fecha_creacion DATE DEFAULT CAST(GETDATE() AS DATE),
+        stock_min DECIMAL(10,2) DEFAULT 0,
+        stock_max DECIMAL(10,2) DEFAULT 0,
+        CONSTRAINT FK_Articulos_Departamentos FOREIGN KEY (departamento) REFERENCES Departamentos(codigo),
+        CONSTRAINT FK_Articulos_TiposIva FOREIGN KEY (tipo_iva) REFERENCES TiposIva(codigo)
+    );
+    
+    PRINT '✅ Tabla Articulos creada';
+END
+GO
+
+-- ============================================================================
 -- TABLA: TiposIva
 -- Descripción: Catálogo de tipos de IVA/Impuestos del motel
 -- ============================================================================
