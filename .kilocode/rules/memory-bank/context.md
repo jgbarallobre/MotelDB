@@ -2,7 +2,7 @@
 
 ## Current State
 
-**Repository Status**: ✅ Code pushed to builder.kiloapps.io
+**Repository Status**: ✅ Code pushed to GitHub (jgbarallobre/MotelDB) and builder.kiloapps.io
 
 Complete motel management system with authentication, dashboard, room management, reservations, users, and permissions.
 
