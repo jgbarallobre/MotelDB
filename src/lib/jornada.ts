@@ -21,7 +21,7 @@ export async function validarJornadaActiva() {
       FROM JornadasAbiertas ja
       INNER JOIN jornadas j ON ja.jornada_id = j.id
       INNER JOIN usuarios u ON ja.usuario_id = u.id
-      WHERE ja.estado = 'Abierta'
+      WHERE LOWER(ja.estado) NOT IN ('cerrada', 'cerrado', 'cancelada', 'cancelado', 'finalizada', 'finalizado')
       ORDER BY ja.hora_inicio DESC
     `);
 

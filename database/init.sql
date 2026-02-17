@@ -823,6 +823,50 @@ BEGIN
 END
 GO
 
+-- ============================================================================
+-- TABLA: Ventas
+-- Descripción: Registro de ventas del punto de venta (POS)
+-- ============================================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Ventas')
+BEGIN
+    CREATE TABLE Ventas (
+        id INT PRIMARY KEY IDENTITY(1,1),
+        fecha DATE NOT NULL DEFAULT GETDATE(),
+        hora TIME NOT NULL DEFAULT CAST(GETDATE() AS TIME),
+        monto_total DECIMAL(12,2) NOT NULL,
+        monto_bs DECIMAL(12,2) NOT NULL,
+        metodo_pago VARCHAR(20) NOT NULL,
+        usuario_id INT NOT NULL,
+        tasa_cambio DECIMAL(10,2) NOT NULL,
+        cliente_id INT,
+        observaciones NVARCHAR(MAX),
+        FOREIGN KEY (usuario_id) REFERENCES Usuarios(id),
+        FOREIGN KEY (cliente_id) REFERENCES Clientes(id)
+    );
+    PRINT '✅ Tabla Ventas creada';
+END
+GO
+
+-- ============================================================================
+-- TABLA: VentasDetalle
+-- Descripción: Detalle de cada venta (artículos vendidos)
+-- ============================================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'VentasDetalle')
+BEGIN
+    CREATE TABLE VentasDetalle (
+        id INT PRIMARY KEY IDENTITY(1,1),
+        venta_id INT NOT NULL,
+        codigo VARCHAR(20) NOT NULL,
+        cantidad INT NOT NULL,
+        precio_unitario DECIMAL(12,2) NOT NULL,
+        iva_porcentaje DECIMAL(5,2) DEFAULT 0,
+        subtotal DECIMAL(12,2) NOT NULL,
+        FOREIGN KEY (venta_id) REFERENCES Ventas(id)
+    );
+    PRINT '✅ Tabla VentasDetalle creada';
+END
+GO
+
 PRINT '';
 PRINT '============================================================================';
 PRINT '✅ BASE DE DATOS INICIALIZADA CORRECTAMENTE';

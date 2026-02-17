@@ -71,6 +71,18 @@ Complete motel management system with authentication, dashboard, room management
 - [x] **Fix Posición Tarjeta Tasa de Cambio a la Izquierda** - Movida la tarjeta de tasa de cambio al lado izquierdo (left-4) en Dashboard, Lobby, Check-in, Pago y Resumen
 - [x] **Búsqueda en Artículos** - Agregado campo de búsqueda visible para filtrar artículos por código, descripción o departamento
 - [x] **Prevenir modificación de Existencia** - Al editar un artículo, el campo existencia ahora es de solo lectura y no se modifica en la base de datos
+- [x] **Punto de Venta (POS) Implemented** - Complete POS system with:
+  - [x] Button added to Lobby menu in dashboard
+  - [x] Full POS page at `/punto-de-venta` with product catalog
+  - [x] Shopping cart with quantity management
+  - [x] Payment processing with multiple methods (efectivo, tarjeta, transferencia, mixto)
+  - [x] Real-time inventory management (stock deducted on sale)
+  - [x] Active jornada validation required to access POS
+- [x] **Improved Jornada Validation** - Now accepts any state except closed/cancelled
+  - [x] Updated `/api/jornada` to use case-insensitive comparison
+  - [x] Updated `/api/jornada/iniciar` for consistency
+  - [x] Updated `/api/jornada/validar` for consistency
+  - [x] Updated `src/lib/jornada.ts` helper function
 
 ## Current Structure
 
@@ -98,8 +110,10 @@ Complete motel management system with authentication, dashboard, room management
 | `src/app/api/configuracion/` | Motel settings API | ✅ Complete |
 | `src/app/api/db-status/` | Database connection check | ✅ Complete |
 | `src/app/api/limpieza/` | Cleaning/maintenance operations API | ✅ Complete |
- | `src/app/api/articulos/` | **NEW** - Articles/Products CRUD API | ✅ Complete |
- | `src/app/articulos/` | **NEW** - Articles management UI | ✅ Complete |
+| `src/app/api/articulos/` | **NEW** - Articles/Products CRUD API | ✅ Complete |
+| `src/app/articulos/` | **NEW** - Articles management UI | ✅ Complete |
+| `src/app/punto-de-venta/` | **NEW** - POS (Point of Sale) UI | ✅ Complete |
+| `src/app/api/ventas/` | **NEW** - Sales processing API | ✅ Complete |
 
 ## Current Focus
 
@@ -113,9 +127,9 @@ All D3xD features implemented:
 - ✅ Impresoras Fiscales
 - ✅ **Check-in Flow** - COMPLETED
 - ✅ **UI/UX Visual Improvements** - COMPLETED
+- ✅ **Punto de Venta (POS)** - COMPLETED
 
 Pending:
-- POS (Productos Tienda)
 - Checkout process
 - Printing integration
 
@@ -130,6 +144,8 @@ SQL Server connection with status monitoring:
 
 | Date | Changes |
 |------|---------|
+| 2025-02-17 | **Punto de Venta (POS)** - Sistema completo de punto de venta con catálogo de productos, carrito de compras, procesamiento de pagos y gestión de inventario en tiempo real |
+| 2025-02-17 | **Validación de Jornada Mejorada** - Ahora acepta cualquier estado excepto cerrada/cancelada (comparación case-insensitive) |
 | 2025-02-17 | **Búsqueda en Artículos** - Agregado campo de búsqueda visible para filtrar artículos por código, descripción o departamento |
 | 2025-02-17 | **Prevenir modificación de Existencia** - Al editar un artículo, el campo existencia ahora es de solo lectura y no se modifica en la base de datos |
 | 2025-02-15 | **Fix Posición Tarjeta Tasa de Cambio** - Corregido posicionamiento de tarjeta (agregado relative al container, posicionada más a la derecha y arriba) |

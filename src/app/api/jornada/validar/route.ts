@@ -14,7 +14,7 @@ export async function GET() {
         hora_inicio,
         estado
       FROM JornadasAbiertas
-      WHERE estado = 'Abierta'
+      WHERE LOWER(estado) NOT IN ('cerrada', 'cerrado', 'cancelada', 'cancelado', 'finalizada', 'finalizado')
       ORDER BY id DESC
     `);
 

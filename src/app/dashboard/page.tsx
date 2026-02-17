@@ -66,8 +66,7 @@ const maestroMenu: MenuItem[] = [
 
 const lobbyMenu: MenuItem[] = [
   { label: 'Ver Habitaciones', icon: '🏨', path: '/lobby', color: 'bg-green-500' },
-  { label: 'Reservas', icon: '📅', path: '/reservas', color: 'bg-emerald-500' },
-  { label: 'Nueva Estadía', icon: '✅', path: '/reservas/nueva', color: 'bg-lime-500' },
+  { label: 'Punto de Venta', icon: '🛒', path: '/punto-de-venta', color: 'bg-blue-500' },
 ];
 
 const mantenimientoMenu: MenuItem[] = [
