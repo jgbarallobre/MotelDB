@@ -73,7 +73,6 @@ export async function PUT(
       precio1, 
       precio2, 
       precio3, 
-      existencia, 
       inactivo, 
       stock_min, 
       stock_max 
@@ -118,33 +117,54 @@ export async function PUT(
       }
     }
 
-    // Actualizar el artículo
-    await pool.request()
-      .input('codigo', codigo)
-      .input('descripcion', descripcion)
-      .input('departamento', departamento ? departamento.toUpperCase() : null)
-      .input('tipo_iva', tipo_iva)
-      .input('precio1', precio1)
-      .input('precio2', precio2)
-      .input('precio3', precio3)
-      .input('existencia', existencia)
-      .input('inactivo', inactivo !== undefined ? (inactivo ? 1 : 0) : null)
-      .input('stock_min', stock_min)
-      .input('stock_max', stock_max)
-      .query(`
-        UPDATE Articulos SET
-          descripcion = COALESCE(@descripcion, descripcion),
-          departamento = COALESCE(@departamento, departamento),
-          tipo_iva = COALESCE(@tipo_iva, tipo_iva),
-          precio1 = COALESCE(@precio1, precio1),
-          precio2 = COALESCE(@precio2, precio2),
-          precio3 = COALESCE(@precio3, precio3),
-          existencia = COALESCE(@existencia, existencia),
-          inactivo = COALESCE(@inactivo, inactivo),
-          stock_min = COALESCE(@stock_min, stock_min),
-          stock_max = COALESCE(@stock_max, stock_max)
-        WHERE codigo = @codigo
-      `);
+    // Actualizar el artículo (solo campos enviados, excluir existencia si no viene)
+    const updateFields: string[] = [];
+    const dbRequest = pool.request();
+    dbRequest.input('codigo', codigo);
+    
+    if (descripcion !== undefined) {
+      updateFields.push('descripcion = @descripcion');
+      dbRequest.input('descripcion', descripcion);
+    }
+    if (departamento !== undefined) {
+      updateFields.push('departamento = @departamento');
+      dbRequest.input('departamento', departamento.toUpperCase());
+    }
+    if (tipo_iva !== undefined) {
+      updateFields.push('tipo_iva = @tipo_iva');
+      dbRequest.input('tipo_iva', tipo_iva);
+    }
+    if (precio1 !== undefined) {
+      updateFields.push('precio1 = @precio1');
+      dbRequest.input('precio1', precio1);
+    }
+    if (precio2 !== undefined) {
+      updateFields.push('precio2 = @precio2');
+      dbRequest.input('precio2', precio2);
+    }
+    if (precio3 !== undefined) {
+      updateFields.push('precio3 = @precio3');
+      dbRequest.input('precio3', precio3);
+    }
+    if (inactivo !== undefined) {
+      updateFields.push('inactivo = @inactivo');
+      dbRequest.input('inactivo', inactivo ? 1 : 0);
+    }
+    if (stock_min !== undefined) {
+      updateFields.push('stock_min = @stock_min');
+      dbRequest.input('stock_min', stock_min);
+    }
+    if (stock_max !== undefined) {
+      updateFields.push('stock_max = @stock_max');
+      dbRequest.input('stock_max', stock_max);
+    }
+    // NO actualizamos existencia al editar - solo se modifica desde el POS
+
+    if (updateFields.length === 0) {
+      return NextResponse.json({ error: 'No hay campos para actualizar' }, { status: 400 });
+    }
+
+    await dbRequest.query(`UPDATE Articulos SET ${updateFields.join(', ')} WHERE codigo = @codigo`);
 
     // Obtener el registro actualizado
     const updatedRecord = await pool.request()

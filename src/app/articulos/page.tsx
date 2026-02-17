@@ -395,6 +395,37 @@ export default function ArticulosPage() {
           </div>
         )}
 
+        {/* Campo de Búsqueda */}
+        <div className="mb-4">
+          <div className="relative max-w-md">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 pl-12 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              placeholder="Buscar por código, descripción o departamento..."
+            />
+            <svg 
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Loading */}
         {loading ? (
           <div className="flex justify-center items-center h-64">
@@ -521,6 +552,11 @@ export default function ArticulosPage() {
             {filteredArticulos.length === 0 && (
               <div className="text-center py-12 text-slate-400">
                 No hay artículos registrados
+              </div>
+            )}
+            {filteredArticulos.length > 0 && searchTerm && (
+              <div className="px-4 py-3 bg-white/5 border-t border-white/10 text-sm text-slate-400">
+                Mostrando {filteredArticulos.length} de {articulos.length} artículos
               </div>
             )}
           </div>
@@ -684,18 +720,19 @@ export default function ArticulosPage() {
                 </div>
               </div>
 
-              {/* Existencia */}
+              {/* Existencia - Solo lectura al editar */}
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                  Existencia
+                  Existencia {editingArticulo && <span className="text-amber-400 text-xs">(solo lectura)</span>}
                 </label>
                 <input
                   type="number"
                   step="0.01"
                   min="0"
                   value={formData.existencia}
-                  onChange={(e) => setFormData({ ...formData, existencia: parseFloat(e.target.value) || 0 })}
-                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  onChange={(e) => !editingArticulo && setFormData({ ...formData, existencia: parseFloat(e.target.value) || 0 })}
+                  disabled={!!editingArticulo}
+                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50"
                 />
               </div>
 
