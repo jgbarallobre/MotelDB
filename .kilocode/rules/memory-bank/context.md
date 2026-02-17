@@ -69,6 +69,8 @@ Complete motel management system with authentication, dashboard, room management
 - [x] UI lobby muestra alerta si no hay jornada activa antes de operaciones
 - [x] **Fix Check-in Navigation** - Lobby ahora navega a `/checkin/[id]` en lugar de `/reservas/nueva`
 - [x] **Fix Posición Tarjeta Tasa de Cambio a la Izquierda** - Movida la tarjeta de tasa de cambio al lado izquierdo (left-4) en Dashboard, Lobby, Check-in, Pago y Resumen
+- [x] **Búsqueda en Artículos** - Agregado campo de búsqueda visible para filtrar artículos por código, descripción o departamento
+- [x] **Prevenir modificación de Existencia** - Al editar un artículo, el campo existencia ahora es de solo lectura y no se modifica en la base de datos
 
 ## Current Structure
 
@@ -95,7 +97,9 @@ Complete motel management system with authentication, dashboard, room management
 | `src/app/api/jornadas/` | Work shifts CRUD API | ✅ Complete |
 | `src/app/api/configuracion/` | Motel settings API | ✅ Complete |
 | `src/app/api/db-status/` | Database connection check | ✅ Complete |
-| `src/app/api/limpieza/` | Cleaning/maintenance operations API | ✅ **NEW** |
+| `src/app/api/limpieza/` | Cleaning/maintenance operations API | ✅ Complete |
+ | `src/app/api/articulos/` | **NEW** - Articles/Products CRUD API | ✅ Complete |
+ | `src/app/articulos/` | **NEW** - Articles management UI | ✅ Complete |
 
 ## Current Focus
 
@@ -126,6 +130,8 @@ SQL Server connection with status monitoring:
 
 | Date | Changes |
 |------|---------|
+| 2025-02-17 | **Búsqueda en Artículos** - Agregado campo de búsqueda visible para filtrar artículos por código, descripción o departamento |
+| 2025-02-17 | **Prevenir modificación de Existencia** - Al editar un artículo, el campo existencia ahora es de solo lectura y no se modifica en la base de datos |
 | 2025-02-15 | **Fix Posición Tarjeta Tasa de Cambio** - Corregido posicionamiento de tarjeta (agregado relative al container, posicionada más a la derecha y arriba) |
 | 2025-02-15 | **Fix Posición Tarjeta Tasa de Cambio a la Izquierda** - Movida la tarjeta de tasa de cambio al lado izquierdo (left-4) en Dashboard, Lobby, Check-in, Pago y Resumen |
 | 2025-02-15 | **Fix Check-in Navigation** - Lobby ahora navega al nuevo flujo de Check-in moderno (/checkin/[id]) en lugar de la página antigua en blanco |
