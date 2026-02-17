@@ -47,6 +47,15 @@ export default function LoginPage() {
       if (result.success) {
         // Guardar sesión en localStorage
         localStorage.setItem('user', JSON.stringify(result.data));
+        
+        // Establecer cookie de sesión para validación en middleware
+        const sessionToken = btoa(JSON.stringify({ 
+          userId: result.data.id, 
+          username: result.data.username,
+          timestamp: Date.now() 
+        }));
+        document.cookie = `session_token=${sessionToken}; path=/; max-age=86400`; // 24 horas
+        
         router.push('/dashboard');
       } else {
         setError(result.error || 'Credenciales incorrectas');

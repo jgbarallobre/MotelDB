@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   // Rutas públicas que no requieren autenticación
-  const publicPaths = ['/login'];
+  const publicPaths = ['/login', '/api/auth/login'];
   const isPublicPath = publicPaths.some(path => request.nextUrl.pathname.startsWith(path));
 
   // Si es una ruta pública, permitir acceso
@@ -11,10 +11,15 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Para rutas protegidas, verificar si hay sesión
-  // Nota: En el cliente se verifica con localStorage, aquí solo redirigimos
-  // si no hay cookie de sesión (implementación básica)
+  // Verificar cookie de sesión
+  const sessionCookie = request.cookies.get('session_token');
   
+  // Si no hay cookie de sesión, redirigir al login
+  if (!sessionCookie) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  // Permitir acceso a rutas protegidas
   return NextResponse.next();
 }
 

@@ -377,6 +377,8 @@ export default function DashboardPage() {
 
   const handleLogout = () => {
     localStorage.removeItem('user');
+    // Eliminar cookie de sesión
+    document.cookie = 'session_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     router.push('/login');
   };
 
