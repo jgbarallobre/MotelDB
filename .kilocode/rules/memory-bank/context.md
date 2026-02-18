@@ -90,6 +90,7 @@ Complete motel management system with authentication, dashboard, room management
   - [x] Botones de pago rápido (Efectivo, Tarjeta, Transferencia)
   - [x] Modal de pago mejorado con resumen de orden
   - [x] Barra de búsqueda con atajo Ctrl+F
+- [x] **Fix Error Clientes Filter** - Agregado manejo defensivo para cuando la API devuelve error en lugar de array
 
 ## Current Structure
 
@@ -151,6 +152,7 @@ SQL Server connection with status monitoring:
 
 | Date | Changes |
 |------|---------|
+| 2026-02-18 | **Fix Error Clientes Filter** - Agregado manejo defensivo para cuando la API devuelve error en lugar de array |
 | 2025-02-17 | **Punto de Venta (POS)** - Sistema completo de punto de venta con catálogo de productos, carrito de compras, procesamiento de pagos y gestión de inventario en tiempo real |
 | 2025-02-17 | **Validación de Jornada Mejorada** - Ahora acepta cualquier estado excepto cerrada/cancelada (comparación case-insensitive) |
 | 2025-02-17 | **Búsqueda en Artículos** - Agregado campo de búsqueda visible para filtrar artículos por código, descripción o departamento |
