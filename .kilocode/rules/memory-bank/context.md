@@ -92,6 +92,7 @@ Complete motel management system with authentication, dashboard, room management
   - [x] Barra de búsqueda con atajo Ctrl+F
 - [x] **Fix Error Clientes Filter** - Agregado manejo defensivo para cuando la API devuelve error en lugar de array
 - [x] **Rediseño CRUD Tipos de Estadía** - Actualizado con tema oscuro moderno y glassmorphism (igual que Usuarios)
+- [x] **Fix Error Clientes** - Mejorado el manejo de errores en la API de Clientes para detectar si la tabla no existe y mostrar mensaje específico al usuario
 
 ## Current Structure
 
