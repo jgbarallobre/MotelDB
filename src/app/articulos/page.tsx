@@ -78,7 +78,7 @@ export default function ArticulosPage() {
       const res = await fetch('/api/articulos');
       if (res.ok) {
         const data = await res.json();
-        setArticulos(data);
+        setArticulos(data.articulos || data);
       }
     } catch (error) {
       console.error('Error fetching articulos:', error);
