@@ -70,7 +70,27 @@ export async function PUT(
       telefono_facturacion
     } = body;
 
+    if (!nombre || !documento || !tipo_documento) {
+      return NextResponse.json(
+        { error: 'Faltan campos requeridos: nombre, documento, tipo_documento' },
+        { status: 400 }
+      );
+    }
+
     const pool = await getConnection();
+    
+    // Verificar si el documento ya existe en otro cliente
+    const checkExisting = await pool.request()
+      .input('documento', documento)
+      .input('id', parseInt(id))
+      .query('SELECT id FROM Clientes WHERE documento = @documento AND id != @id');
+
+    if (checkExisting.recordset.length > 0) {
+      return NextResponse.json(
+        { error: 'Ya existe otro cliente con este documento' },
+        { status: 400 }
+      );
+    }
     
     await pool.request()
       .input('id', parseInt(id))
