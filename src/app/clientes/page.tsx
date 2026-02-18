@@ -284,6 +284,25 @@ export default function ClientesPage() {
     );
   }
 
+  // Mostrar error si existe, incluso cuando no está loading
+  if (error && clientes.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+        <div className="bg-red-500/20 border border-red-500/30 text-red-300 px-6 py-4 rounded-2xl backdrop-blur-xl max-w-md text-center">
+          <div className="text-4xl mb-4">⚠️</div>
+          <h2 className="text-xl font-bold mb-2">Error de Conexión</h2>
+          <p className="text-sm">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 bg-red-500/40 hover:bg-red-500/60 text-white px-4 py-2 rounded-xl transition-all"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
