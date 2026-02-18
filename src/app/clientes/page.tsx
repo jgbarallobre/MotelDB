@@ -83,20 +83,38 @@ export default function ClientesPage() {
     }
   };
 
-  // Validar formato de CI/RIF (10 caracteres, comienza con V, J, G mayúscula o minúscula)
-  const validarDocumento = (doc: string): boolean => {
-    if (doc.length !== 10) return false;
-    const primerCaracter = doc.charAt(0).toUpperCase();
-    return ['V', 'J', 'G'].includes(primerCaracter);
+  // Verificar si el documento ya existe en la base de datos
+  const verificarDocumentoExistente = async (documento: string): Promise<{ existe: boolean; cliente?: any }> => {
+    try {
+      const response = await fetch(`/api/clientes/buscar?documento=${encodeURIComponent(documento.toUpperCase())}`);
+      const data = await response.json();
+      if (response.ok) {
+        return { existe: data.existe, cliente: data.cliente };
+      }
+      return { existe: false };
+    } catch (error) {
+      console.error('Error verificando documento:', error);
+      return { existe: false };
+    }
   };
 
-  // Avanzar al siguiente paso (validar CI/RIF primero)
-  const handleNextStep = () => {
+  // Avanzar al siguiente paso (verificar que CI/RIF no exista ya en la base de datos)
+  const handleNextStep = async () => {
     setError('');
-    if (!validarDocumento(formData.documento)) {
-      setError('El documento debe tener 10 caracteres y comenzar con V, J o G');
+    
+    // Validar que el documento no esté vacío
+    if (!formData.documento.trim()) {
+      setError('El documento es obligatorio');
       return;
     }
+    
+    // Verificar si el documento ya existe en la base de datos
+    const result = await verificarDocumentoExistente(formData.documento);
+    if (result.existe) {
+      setError(`Ya existe un cliente registrado con este documento: ${result.cliente?.nombre} ${result.cliente?.apellido || ''}`);
+      return;
+    }
+    
     setFormStep(2);
   };
 
@@ -111,10 +129,11 @@ export default function ClientesPage() {
     setError('');
     setSuccess('');
 
-    // Si estamos en paso 1, validar documento y avanzar al paso 2
+    // Si estamos en paso 1, verificar que el documento no exista ya
     if (formStep === 1) {
-      if (!validarDocumento(formData.documento)) {
-        setError('El documento debe tener 10 caracteres y comenzar con V, J o G');
+      const result = await verificarDocumentoExistente(formData.documento);
+      if (result.existe) {
+        setError(`Ya existe un cliente registrado con este documento: ${result.cliente?.nombre} ${result.cliente?.apellido || ''}`);
         return;
       }
       setFormStep(2);
