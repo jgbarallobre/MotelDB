@@ -68,12 +68,14 @@ export default function ClientesPage() {
         setClientes(data);
       } else if (data.error) {
         console.error('API Error:', data.error);
+        setError(data.error); // Mostrar el error al usuario
         setClientes([]);
       } else {
         setClientes([]);
       }
     } catch (error) {
       console.error('Error fetching clientes:', error);
+      setError('Error al conectar con el servidor');
       setClientes([]);
     } finally {
       setLoading(false);

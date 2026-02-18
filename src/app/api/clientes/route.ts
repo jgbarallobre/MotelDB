@@ -5,6 +5,21 @@ export async function GET() {
   try {
     const pool = await getConnection();
     
+    // Verificar si la tabla existe
+    const tableCheck = await pool.request()
+      .query(`
+        SELECT COUNT(*) as count 
+        FROM INFORMATION_SCHEMA.TABLES 
+        WHERE TABLE_NAME = 'Clientes'
+      `);
+    
+    if (tableCheck.recordset[0].count === 0) {
+      return NextResponse.json(
+        { error: 'La tabla Clientes no existe en la base de datos. Ejecute el script init.sql para crear las tablas.' },
+        { status: 500 }
+      );
+    }
+    
     const result = await pool.request()
       .query(`
         SELECT 
@@ -28,10 +43,19 @@ export async function GET() {
       `);
 
     return NextResponse.json(result.recordset);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching clientes:', error);
+    
+    // Verificar si es error de tabla no existe
+    if (error.message && error.message.includes('Invalid object name')) {
+      return NextResponse.json(
+        { error: 'La tabla Clientes no existe. Ejecute el script init.sql para crear las tablas del sistema.' },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'Error al obtener clientes' },
+      { error: 'Error al obtener clientes: ' + (error.message || 'Error desconocido') },
       { status: 500 }
     );
   }
