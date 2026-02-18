@@ -41,6 +41,7 @@ export default function ClientesPage() {
     email: '',
     direccion: '',
   });
+  const [formStep, setFormStep] = useState(1); // 1 = CI/RIF, 2 = datos restantes
   const [billingData, setBillingData] = useState({
     rif: '',
     razon_social: '',
@@ -89,14 +90,40 @@ export default function ClientesPage() {
     return ['V', 'J', 'G'].includes(primerCaracter);
   };
 
+  // Avanzar al siguiente paso (validar CI/RIF primero)
+  const handleNextStep = () => {
+    setError('');
+    if (!validarDocumento(formData.documento)) {
+      setError('El documento debe tener 10 caracteres y comenzar con V, J o G');
+      return;
+    }
+    setFormStep(2);
+  };
+
+  // Volver al paso anterior
+  const handlePrevStep = () => {
+    setFormStep(1);
+    setError('');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
-    // Validar formato de documento
-    if (!validarDocumento(formData.documento)) {
-      setError('El documento debe tener 10 caracteres y comenzar con V, J o G');
+    // Si estamos en paso 1, validar documento y avanzar al paso 2
+    if (formStep === 1) {
+      if (!validarDocumento(formData.documento)) {
+        setError('El documento debe tener 10 caracteres y comenzar con V, J o G');
+        return;
+      }
+      setFormStep(2);
+      return;
+    }
+
+    // Validar que nombre completo no esté vacío
+    if (!formData.nombre_completo.trim()) {
+      setError('El nombre completo es obligatorio');
       return;
     }
 
@@ -203,6 +230,7 @@ export default function ClientesPage() {
       email: item.email || '',
       direccion: item.direccion || '',
     });
+    setFormStep(2); // Ya tenemos el documento, ir directamente al paso 2
     setShowModal(true);
   };
 
@@ -246,6 +274,7 @@ export default function ClientesPage() {
       email: '',
       direccion: '',
     });
+    setFormStep(1); // Siempre empezar por el paso 1 (CI/RIF)
     setShowModal(true);
   };
 
@@ -258,6 +287,7 @@ export default function ClientesPage() {
       email: '',
       direccion: '',
     });
+    setFormStep(1);
   };
 
   const handleLogout = () => {
@@ -527,71 +557,114 @@ export default function ClientesPage() {
                     ⚠️ {error}
                   </div>
                 )}
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Nombre Completo *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.nombre_completo}
-                    onChange={(e) => setFormData({ ...formData, nombre_completo: e.target.value })}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                    placeholder="Ej: Juan Pérez"
-                  />
-                  <p className="text-xs text-slate-500 mt-1">Ingrese nombre y apellido separados por espacio</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    CI/RIF *
-                    <span className="text-xs text-slate-500 ml-2">(10 caracteres, comienza con V, J o G)</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    maxLength={10}
-                    value={formData.documento}
-                    onChange={(e) => setFormData({ ...formData, documento: e.target.value.toUpperCase() })}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all uppercase"
-                    placeholder="Ej: V123456789"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Teléfono
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.telefono}
-                    onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                    placeholder="Opcional"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                    placeholder="Opcional"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Dirección
-                  </label>
-                  <textarea
-                    value={formData.direccion}
-                    onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                    rows={2}
-                    placeholder="Opcional"
-                  />
-                </div>
+
+                {/* Paso 1: Solo CI/RIF */}
+                {formStep === 1 && (
+                  <>
+                    <div className="text-center mb-6">
+                      <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span className="text-3xl">🔍</span>
+                      </div>
+                      <h4 className="text-lg font-semibold text-white">Identificación del Huésped</h4>
+                      <p className="text-sm text-slate-400 mt-1">Ingrese el número de identificación (Cédula o RIF)</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">
+                        CI/RIF *
+                        <span className="text-xs text-slate-500 ml-2">(10 caracteres, comienza con V, J o G)</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        autoFocus
+                        maxLength={10}
+                        value={formData.documento}
+                        onChange={(e) => setFormData({ ...formData, documento: e.target.value.toUpperCase() })}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleNextStep();
+                          }
+                        }}
+                        className="w-full px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all uppercase text-center text-xl tracking-widest font-mono"
+                        placeholder="V123456789"
+                      />
+                      <p className="text-xs text-slate-500 mt-2 text-center">Presione Enter o click en Continuar</p>
+                    </div>
+                  </>
+                )}
+
+                {/* Paso 2: Resto de datos */}
+                {formStep === 2 && (
+                  <>
+                    <div className="flex items-center gap-3 mb-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                      <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                        <span className="text-emerald-400 font-mono font-bold">{formData.documento}</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-slate-400">CI/RIF confirmado</p>
+                        <button
+                          type="button"
+                          onClick={handlePrevStep}
+                          className="text-xs text-emerald-400 hover:text-emerald-300 underline"
+                        >
+                          Cambiar
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">
+                        Nombre Completo *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        autoFocus
+                        value={formData.nombre_completo}
+                        onChange={(e) => setFormData({ ...formData, nombre_completo: e.target.value })}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                        placeholder="Ej: Juan Pérez"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">Ingrese nombre y apellido separados por espacio</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">
+                        Teléfono
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.telefono}
+                        onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                        placeholder="Opcional"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                        placeholder="Opcional"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">
+                        Dirección
+                      </label>
+                      <textarea
+                        value={formData.direccion}
+                        onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                        rows={2}
+                        placeholder="Opcional"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
               <div className="px-6 py-4 border-t border-white/10 flex justify-end gap-3">
                 <button
@@ -606,12 +679,22 @@ export default function ClientesPage() {
                 >
                   Cancelar
                 </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all duration-200 hover:shadow-lg"
-                >
-                  {editingItem ? 'Actualizar' : 'Crear'}
-                </button>
+                {formStep === 1 ? (
+                  <button
+                    type="button"
+                    onClick={handleNextStep}
+                    className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all duration-200 hover:shadow-lg"
+                  >
+                    Continuar →
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all duration-200 hover:shadow-lg"
+                  >
+                    {editingItem ? 'Actualizar' : 'Crear'}
+                  </button>
+                )}
               </div>
             </form>
           </div>
