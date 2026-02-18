@@ -95,6 +95,7 @@ Complete motel management system with authentication, dashboard, room management
 - [x] **Fix Error Clientes** - Mejorado el manejo de errores en la API de Clientes para detectar si la tabla no existe y mostrar mensaje específico al usuario
 - [x] **Fix Error Display** - Agregada pantalla de error visible cuando la tabla Clientes no existe, con botón de reintentar
 - [x] **Fix Validación CI/RIF** - Eliminada validación de 10 caracteres, ahora verifica que el CI/RIF no exista previamente en la base de datos antes de permitir continuar al siguiente paso
+  - [x] **Fix POS Artículos y Tasa** - Corregido formato de respuesta de APIs /api/articulos y /api/tasas para que devuelvan objetos {articulos: [...]} y {tasas: [...]} en lugar de arrays directos, y agregado campo 'activo' calculado (inverso de 'inactivo') y campo 'tasaCambio' renombrado
 
 ## Current Structure
 
@@ -156,6 +157,7 @@ SQL Server connection with status monitoring:
 
 | Date | Changes |
 |------|---------|
+| 2026-02-18 | **Fix POS Artículos y Tasa** - Corregido formato de respuesta de APIs /api/articulos y /api/tasas para devolver objetos {articulos: [...]} y {tasas: [...]} en lugar de arrays directos |
 | 2026-02-18 | **Fix Error Clientes Filter** - Agregado manejo defensivo para cuando la API devuelve error en lugar de array |
 | 2025-02-17 | **Punto de Venta (POS)** - Sistema completo de punto de venta con catálogo de productos, carrito de compras, procesamiento de pagos y gestión de inventario en tiempo real |
 | 2025-02-17 | **Validación de Jornada Mejorada** - Ahora acepta cualquier estado excepto cerrada/cancelada (comparación case-insensitive) |
