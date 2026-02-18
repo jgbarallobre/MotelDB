@@ -94,6 +94,7 @@ Complete motel management system with authentication, dashboard, room management
 - [x] **Rediseño CRUD Tipos de Estadía** - Actualizado con tema oscuro moderno y glassmorphism (igual que Usuarios)
 - [x] **Fix Error Clientes** - Mejorado el manejo de errores en la API de Clientes para detectar si la tabla no existe y mostrar mensaje específico al usuario
 - [x] **Fix Error Display** - Agregada pantalla de error visible cuando la tabla Clientes no existe, con botón de reintentar
+- [x] **Fix Validación CI/RIF** - Eliminada validación de 10 caracteres, ahora verifica que el CI/RIF no exista previamente en la base de datos antes de permitir continuar al siguiente paso
 
 ## Current Structure
 
