@@ -9,7 +9,7 @@ export async function GET() {
       .query(`
         SELECT TOP 1 
           id,
-          tasa,
+          tasa as tasaCambio,
           fecha_registro,
           usuario_registro_id,
           observaciones
@@ -17,7 +17,7 @@ export async function GET() {
         ORDER BY fecha_registro DESC
       `);
 
-    return NextResponse.json(result.recordset);
+    return NextResponse.json({ tasas: result.recordset });
   } catch (error) {
     console.error('Error fetching tasas:', error);
     return NextResponse.json(

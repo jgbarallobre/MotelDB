@@ -23,6 +23,7 @@ export async function GET() {
         a.precio3,
         a.existencia,
         a.inactivo,
+        CASE WHEN a.inactivo = 1 THEN 0 ELSE 1 END as activo,
         a.fecha_creacion,
         a.stock_min,
         a.stock_max,
@@ -36,7 +37,7 @@ export async function GET() {
       ORDER BY a.codigo
     `);
 
-    return NextResponse.json(result.recordset);
+    return NextResponse.json({ articulos: result.recordset });
   } catch (error) {
     console.error('Error fetching articulos:', error);
     return NextResponse.json({ error: 'Error al obtener artículos' }, { status: 500 });
