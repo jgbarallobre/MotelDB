@@ -61,9 +61,19 @@ export default function ClientesPage() {
     try {
       const response = await fetch('/api/clientes');
       const data = await response.json();
-      setClientes(data);
+      
+      // Verificar que data sea un array
+      if (Array.isArray(data)) {
+        setClientes(data);
+      } else if (data.error) {
+        console.error('API Error:', data.error);
+        setClientes([]);
+      } else {
+        setClientes([]);
+      }
     } catch (error) {
       console.error('Error fetching clientes:', error);
+      setClientes([]);
     } finally {
       setLoading(false);
     }
@@ -188,7 +198,10 @@ export default function ClientesPage() {
     router.push('/login');
   };
 
-  const filteredClientes = clientes.filter(cliente => 
+  // Ensure clientes is always an array for filtering
+  const clientesArray = Array.isArray(clientes) ? clientes : [];
+  
+  const filteredClientes = clientesArray.filter(cliente => 
     cliente.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cliente.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cliente.documento.includes(searchTerm)
