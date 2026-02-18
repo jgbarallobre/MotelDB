@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getConnection } from '@/lib/db';
+import { validarJornadaActiva, getJornadaActiva } from '@/lib/jornada';
 
 export async function GET() {
   try {
@@ -47,8 +48,22 @@ export async function POST(request: Request) {
       montoRecibidoUSD, 
       montoRecibidoBS,
       tasaCambio,
-      usuarioId 
+      usuarioId,
+      pagos
     } = body;
+
+    // Validar que hay una jornada activa
+    const validacionJornada = await validarJornadaActiva();
+    if (!validacionJornada.valida) {
+      return NextResponse.json(
+        { error: validacionJornada.error },
+        { status: 403 }
+      );
+    }
+
+    // Obtener jornada activa
+    const jornadaActiva = await getJornadaActiva();
+    const jornada_id = jornadaActiva?.id || null;
 
     // Validate required fields
     if (!items || items.length === 0) {
@@ -105,6 +120,27 @@ export async function POST(request: Request) {
     
     const total = subtotal + totalIVA;
     
+    // Usar el array de pagos si está disponible, si no usar el método de pago único (compatibilidad)
+    const pagosArray = pagos && pagos.length > 0 ? pagos : [
+      { 
+        forma_pago: metodoPago, 
+        monto: montoRecibidoUSD || total, 
+        monto_bs: montoRecibidoBS || (total * tasaCambio),
+        tasa_cambio: tasaCambio
+      }
+    ];
+
+    // Calcular monto total recibido
+    const montoTotalRecibido = pagosArray.reduce((sum: number, p: any) => sum + (p.monto || 0), 0);
+    const montoTotalBS = pagosArray.reduce((sum: number, p: any) => sum + (p.monto_bs || p.monto * tasaCambio || 0), 0);
+
+    if (montoTotalRecibido < total && montoTotalBS < total * tasaCambio) {
+      return NextResponse.json(
+        { error: 'Monto insuficiente' },
+        { status: 400 }
+      );
+    }
+    
     // Insert sale header
     const fecha = new Date().toISOString().split('T')[0];
     const hora = new Date().toTimeString().split(' ')[0].substring(0, 8);
@@ -112,9 +148,9 @@ export async function POST(request: Request) {
     const insertVentaResult = await pool.request()
       .input('fecha', fecha)
       .input('hora', hora)
-      .input('monto_total', montoRecibidoUSD || total)
-      .input('monto_bs', montoRecibidoBS || (total * tasaCambio))
-      .input('metodo_pago', metodoPago)
+      .input('monto_total', total)
+      .input('monto_bs', total * tasaCambio)
+      .input('metodo_pago', 'MULTIPLE')
       .input('usuario_id', usuarioId)
       .input('tasa_cambio', tasaCambio)
       .query(`
@@ -130,17 +166,18 @@ export async function POST(request: Request) {
       const itemSubtotal = item.precioUnitario * item.cantidad;
       const itemIVA = itemSubtotal * (item.ivaPorcentaje / 100);
       
-      // Insert detail
+      // Insert detail - save prices in BS
       await pool.request()
         .input('venta_id', ventaId)
         .input('codigo', item.codigo)
         .input('cantidad', item.cantidad)
-        .input('precio_unitario', item.precioUnitario)
+        .input('precio_unitario', item.precioUnitario * tasaCambio)
         .input('iva_porcentaje', item.ivaPorcentaje)
-        .input('subtotal', itemSubtotal)
+        .input('subtotal', itemSubtotal * tasaCambio)
+        .input('tasa_cambio', tasaCambio)
         .query(`
-          INSERT INTO VentasDetalle (venta_id, codigo, cantidad, precio_unitario, iva_porcentaje, subtotal)
-          VALUES (@venta_id, @codigo, @cantidad, @precio_unitario, @iva_porcentaje, @subtotal)
+          INSERT INTO VentasDetalle (venta_id, codigo, cantidad, precio_unitario, iva_porcentaje, subtotal, tasa_cambio)
+          VALUES (@venta_id, @codigo, @cantidad, @precio_unitario, @iva_porcentaje, @subtotal, @tasa_cambio)
         `);
       
       // Update inventory
@@ -154,7 +191,36 @@ export async function POST(request: Request) {
         `);
     }
     
-    // Get the created sale
+    // Registrar pagos en PagosDetalle
+    for (const pago of pagosArray) {
+      // Obtener forma_pago_id
+      const formaPagoResult = await pool.request()
+        .input('codigo', pago.forma_pago || metodoPago)
+        .query('SELECT id FROM FormasPago WHERE codigo = @codigo');
+      
+      const forma_pago_id = formaPagoResult.recordset.length > 0 
+        ? formaPagoResult.recordset[0].id 
+        : 1;
+
+      const montoBS = pago.monto_bs || (pago.monto * tasaCambio);
+
+      await pool.request()
+        .input('tipo_operacion', 'VENTA')
+        .input('operacion_id', ventaId)
+        .input('forma_pago_id', forma_pago_id)
+        .input('forma_pago_codigo', pago.forma_pago || metodoPago)
+        .input('monto', pago.monto)
+        .input('monto_bs', montoBS)
+        .input('tasa_cambio', tasaCambio)
+        .input('referencia', pago.referencia || '')
+        .input('monto_vuelto', pago.vuelto || 0)
+        .input('jornada_id', jornada_id)
+        .input('usuario_id', usuarioId)
+        .query(`
+          INSERT INTO PagosDetalle (tipo_operacion, operacion_id, forma_pago_id, forma_pago_codigo, monto, monto_bs, tasa_cambio, referencia, monto_vuelto, jornada_id, usuario_id)
+          VALUES (@tipo_operacion, @operacion_id, @forma_pago_id, @forma_pago_codigo, @monto, @monto_bs, @tasa_cambio, @referencia, @monto_vuelto, @jornada_id, @usuario_id)
+        `);
+    }
     const ventaResult = await pool.request()
       .input('id', ventaId)
       .query(`

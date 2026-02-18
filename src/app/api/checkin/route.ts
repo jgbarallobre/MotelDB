@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getConnection } from '@/lib/db';
-import { validarJornadaActiva } from '@/lib/jornada';
+import { validarJornadaActiva, getJornadaActiva } from '@/lib/jornada';
 
 export async function GET(request: Request) {
   try {
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
 
     await transaction.begin();
 
-    // 1. Validar que hay una jornada activa
+    // 1. Validar que hay una jornada activa y obtenerla
     const validacionJornada = await validarJornadaActiva();
     if (!validacionJornada.valida) {
       return NextResponse.json(
@@ -103,6 +103,10 @@ export async function POST(request: Request) {
         { status: 403 }
       );
     }
+
+    // Obtener jornada activa
+    const jornadaActiva = await getJornadaActiva();
+    const jornada_id = jornadaActiva?.id || null;
 
     // 2. Verificar habitación disponible
     const habitacionResult = await transaction.request()
@@ -176,7 +180,12 @@ export async function POST(request: Request) {
     // 5. Calcular precio total
     const precioTotal = tipoEstadia.precio;
 
-    // 6. Calcular monto total pagado
+    // Obtener tasa de cambio
+    const tasaResult = await transaction.request()
+      .query(`SELECT TOP 1 tasa FROM TasasCambio ORDER BY fecha_registro DESC`);
+    const tasaCambio = tasaResult.recordset.length > 0 ? tasaResult.recordset[0].tasa : 1;
+
+    // 6. Calcular monto total pagado (ahora en BS)
     const montoPagado = pagos.reduce((sum: number, pago: { monto: number }) => sum + pago.monto, 0);
 
     if (montoPagado < precioTotal) {
@@ -211,16 +220,61 @@ export async function POST(request: Request) {
 
     const reserva = reservaResult.recordset[0];
 
-    // 8. Registrar pagos
+    // 8. Registrar pagos (en ambas tablas - Pagos y PagosDetalle)
     for (const pago of pagos) {
+      // Determinar el monto en BS basado en la forma de pago
+      let montoBS = pago.monto;
+      if (pago.es_divisa) {
+        // Si es divisas, el monto ya viene en $, convertir a BS
+        montoBS = pago.monto * tasaCambio;
+      } else if (pago.monto_bs) {
+        // Si ya tiene monto_bs, usarlo
+        montoBS = pago.monto_bs;
+      } else {
+        // Es monto en BS
+        montoBS = pago.monto;
+      }
+
+      // Guardar en tabla Pagos original (para compatibilidad)
       await transaction.request()
         .input('reserva_id', reserva.id)
-        .input('monto', pago.monto)
-        .input('metodo_pago', pago.metodo_pago)
-        .input('comprobante', pago.comprobante || '')
+        .input('monto', montoBS)
+        .input('metodo_pago', pago.forma_pago || pago.metodo_pago)
+        .input('comprobante', pago.referencia || '')
+        .input('monto_bs', montoBS)
+        .input('tasa_cambio', tasaCambio)
+        .input('jornada_id', jornada_id)
+        .input('usuario_id', usuario_id)
         .query(`
-          INSERT INTO Pagos (reserva_id, monto, metodo_pago, comprobante)
-          VALUES (@reserva_id, @monto, @metodo_pago, @comprobante)
+          INSERT INTO Pagos (reserva_id, monto, metodo_pago, comprobante, monto_bs, tasa_cambio, jornada_id, usuario_id)
+          VALUES (@reserva_id, @monto, @metodo_pago, @comprobante, @monto_bs, @tasa_cambio, @jornada_id, @usuario_id)
+        `);
+
+      // Obtener forma_pago_id
+      const formaPagoResult = await transaction.request()
+        .input('codigo', pago.forma_pago || pago.metodo_pago)
+        .query('SELECT id FROM FormasPago WHERE codigo = @codigo');
+      
+      const forma_pago_id = formaPagoResult.recordset.length > 0 
+        ? formaPagoResult.recordset[0].id 
+        : 1;
+
+      // Guardar en tabla PagosDetalle (nuevo sistema)
+      await transaction.request()
+        .input('tipo_operacion', 'CHECKIN')
+        .input('operacion_id', reserva.id)
+        .input('forma_pago_id', forma_pago_id)
+        .input('forma_pago_codigo', pago.forma_pago || pago.metodo_pago)
+        .input('monto', pago.monto)
+        .input('monto_bs', montoBS)
+        .input('tasa_cambio', tasaCambio)
+        .input('referencia', pago.referencia || '')
+        .input('monto_vuelto', pago.vuelto || 0)
+        .input('jornada_id', jornada_id)
+        .input('usuario_id', usuario_id)
+        .query(`
+          INSERT INTO PagosDetalle (tipo_operacion, operacion_id, forma_pago_id, forma_pago_codigo, monto, monto_bs, tasa_cambio, referencia, monto_vuelto, jornada_id, usuario_id)
+          VALUES (@tipo_operacion, @operacion_id, @forma_pago_id, @forma_pago_codigo, @monto, @monto_bs, @tasa_cambio, @referencia, @monto_vuelto, @jornada_id, @usuario_id)
         `);
     }
 
@@ -245,8 +299,16 @@ export async function POST(request: Request) {
         horas_contratadas: tipoEstadia.duracion_horas,
         precio_total: precioTotal,
         monto_pagado: montoPagado,
+        tasa_cambio: tasaCambio,
         cambio: montoPagado - precioTotal
-      }
+      },
+      pagos: pagos.map((p: any) => ({
+        forma_pago: p.forma_pago || p.metodo_pago,
+        monto: p.monto,
+        monto_bs: p.es_divisa ? p.monto * tasaCambio : p.monto,
+        tasa_cambio: tasaCambio,
+        referencia: p.referencia || ''
+      }))
     }, { status: 201 });
 
   } catch (error) {

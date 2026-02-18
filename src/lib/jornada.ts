@@ -64,3 +64,39 @@ export async function requireJornadaActiva() {
   
   return jornada;
 }
+
+/**
+ * Obtiene la jornada activa actual sin validar
+ * @returns Objeto con la jornada o null si no hay ninguna
+ */
+export async function getJornadaActiva() {
+  try {
+    const pool = await getConnection();
+    
+    const result = await pool.request().query(`
+      SELECT TOP 1 
+        ja.id,
+        ja.jornada_id,
+        ja.usuario_id,
+        ja.fecha_trabajo,
+        ja.hora_inicio,
+        ja.estado,
+        j.nombre as jornada_nombre,
+        u.nombre as usuario_nombre
+      FROM JornadasAbiertas ja
+      INNER JOIN jornadas j ON ja.jornada_id = j.id
+      INNER JOIN usuarios u ON ja.usuario_id = u.id
+      WHERE LOWER(ja.estado) NOT IN ('cerrada', 'cerrado', 'cancelada', 'cancelado', 'finalizada', 'finalizado')
+      ORDER BY ja.hora_inicio DESC
+    `);
+
+    if (result.recordset.length === 0) {
+      return null;
+    }
+
+    return result.recordset[0];
+  } catch (error) {
+    console.error('Error al obtener jornada activa:', error);
+    return null;
+  }
+}

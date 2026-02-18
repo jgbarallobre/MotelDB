@@ -861,9 +861,129 @@ BEGIN
         precio_unitario DECIMAL(12,2) NOT NULL,
         iva_porcentaje DECIMAL(5,2) DEFAULT 0,
         subtotal DECIMAL(12,2) NOT NULL,
+        tasa_cambio DECIMAL(12,2) NOT NULL DEFAULT 1,
         FOREIGN KEY (venta_id) REFERENCES Ventas(id)
     );
-    PRINT '✅ Tabla VentasDetalle creada';
+    PRINT '✅ Tabla VentasDetalle actualizada';
+END
+GO
+
+-- ============================================================================
+-- TABLA: FormasPago (Catálogo de métodos de pago del sistema)
+-- Descripción: Catálogo unificado de formas de pago para todo el sistema
+-- ============================================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'FormasPago')
+BEGIN
+    CREATE TABLE FormasPago (
+        id INT PRIMARY KEY IDENTITY(1,1),
+        codigo VARCHAR(20) NOT NULL UNIQUE,
+        nombre VARCHAR(50) NOT NULL,
+        descripcion NVARCHAR(MAX),
+        acepta_vuelto BIT DEFAULT 1,
+        es_efectivo BIT DEFAULT 0,
+        es_divisa BIT DEFAULT 0,
+        requiere_referencia BIT DEFAULT 0,
+        activo BIT DEFAULT 1,
+        orden INT DEFAULT 0,
+        icono VARCHAR(50) DEFAULT '💰',
+        color VARCHAR(7) DEFAULT '#3B82F6',
+        fecha_creacion DATETIME2 DEFAULT GETDATE()
+    );
+    
+    -- Insertar métodos de pago por defecto
+    INSERT INTO FormasPago (codigo, nombre, descripcion, acepta_vuelto, es_efectivo, es_divisa, requiere_referencia, orden, icono, color)
+    VALUES 
+        ('EFECTIVO_BS', 'Efectivo BS', 'Pago en efectivo en Bolívar Soberano', 1, 1, 0, 0, 1, '💵', '#22C55E'),
+        ('TARJETA_DEBITO', 'Tarjeta Débito', 'Pago con tarjeta de débito', 0, 0, 0, 0, 2, '💳', '#3B82F6'),
+        ('TARJETA_CREDITO', 'Tarjeta Crédito', 'Pago con tarjeta de crédito', 0, 0, 0, 0, 3, '💳', '#8B5CF6'),
+        ('PAGO_MOVIL', 'Pago Móvil', 'Pago móvil con referencia', 0, 0, 0, 1, 4, '📱', '#EC4899'),
+        ('TRANSFERENCIA', 'Transferencia', 'Transferencia bancaria con referencia', 0, 0, 0, 1, 5, '🏦', '#6366F1'),
+        ('DIVISAS', 'Divisas', 'Pago en efectivo en dólares ($)', 1, 1, 1, 0, 6, '💲', '#F59E0B');
+    
+    PRINT '✅ Tabla FormasPago creada';
+END
+GO
+
+-- ============================================================================
+-- TABLA: PagosDetalle (Registro detallado de pagos)
+-- Descripción: Registra los pagos detallados para cualquier operación
+--               (check-in, ventas, reservas, etc.)
+-- ============================================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'PagosDetalle')
+BEGIN
+    CREATE TABLE PagosDetalle (
+        id INT PRIMARY KEY IDENTITY(1,1),
+        tipo_operacion VARCHAR(20) NOT NULL CHECK (tipo_operacion IN ('CHECKIN', 'VENTA', 'RESERVA', 'EGRESO')),
+        operacion_id INT NOT NULL,
+        forma_pago_id INT NOT NULL,
+        forma_pago_codigo VARCHAR(20) NOT NULL,
+        monto DECIMAL(12,2) NOT NULL CHECK (monto >= 0),
+        monto_bs DECIMAL(12,2) NOT NULL CHECK (monto_bs >= 0),
+        tasa_cambio DECIMAL(12,2) NOT NULL DEFAULT 1,
+        referencia VARCHAR(100),
+        monto_vuelto DECIMAL(12,2) DEFAULT 0,
+        observaciones NVARCHAR(MAX),
+        jornada_id INT,
+        usuario_id INT,
+        fecha_pago DATETIME2 DEFAULT GETDATE(),
+        FOREIGN KEY (forma_pago_id) REFERENCES FormasPago(id),
+        FOREIGN KEY (jornada_id) REFERENCES Jornadas(id),
+        FOREIGN KEY (usuario_id) REFERENCES Usuarios(id)
+    );
+    PRINT '✅ Tabla PagosDetalle creada';
+END
+GO
+
+-- ============================================================================
+-- ACTUALIZAR TABLA: Pagos (Agregar nuevos métodos de pago)
+-- ============================================================================
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Pagos')
+BEGIN
+    -- Eliminar constraint existente si hay uno
+    DECLARE @constraintName NVARCHAR(128);
+    SELECT @constraintName = dc.name 
+    FROM sys.default_constraints dc 
+    JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id 
+    WHERE dc.parent_object_id = OBJECT_ID('Pagos') AND c.name = 'metodo_pago';
+    
+    IF @constraintName IS NOT NULL
+    BEGIN
+        EXEC('ALTER TABLE Pagos DROP CONSTRAINT ' + @constraintName);
+    END
+    
+    -- Agregar columna monto_bs si no existe
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Pagos') AND name = 'monto_bs')
+    BEGIN
+        ALTER TABLE Pagos ADD monto_bs DECIMAL(12,2) DEFAULT 0;
+    END
+    
+    -- Agregar columna tasa_cambio si no existe
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Pagos') AND name = 'tasa_cambio')
+    BEGIN
+        ALTER TABLE Pagos ADD tasa_cambio DECIMAL(12,2) DEFAULT 1;
+    END
+    
+    -- Agregar columna jornada_id si no existe
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Pagos') AND name = 'jornada_id')
+    BEGIN
+        ALTER TABLE Pagos ADD jornada_id INT;
+        ALTER TABLE Pagos ADD CONSTRAINT FK_Pagos_Jornadas FOREIGN KEY (jornada_id) REFERENCES Jornadas(id);
+    END
+    
+    -- Agregar columna usuario_id si no existe
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Pagos') AND name = 'usuario_id')
+    BEGIN
+        ALTER TABLE Pagos ADD usuario_id INT;
+        ALTER TABLE Pagos ADD CONSTRAINT FK_Pagos_Usuarios FOREIGN KEY (usuario_id) REFERENCES Usuarios(id);
+    END
+    
+    -- Agregar columna referencia si no existe
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Pagos') AND name = 'referencia')
+    BEGIN
+        ALTER TABLE Pagos ADD referencia VARCHAR(100);
+    END
+    
+    PRINT '✅ Tabla Pagos actualizada con nuevos campos';
 END
 GO
 
@@ -872,7 +992,7 @@ PRINT '=========================================================================
 PRINT '✅ BASE DE DATOS INICIALIZADA CORRECTAMENTE';
 PRINT '============================================================================';
 PRINT 'Base de datos: MotelDB';
-PRINT 'Tablas creadas: 8 (Usuarios, LogAccesos, Habitaciones, Clientes, Reservas, Pagos, ServiciosAdicionales, ReservaServicios)';
+PRINT 'Tablas creadas: 10 (Usuarios, LogAccesos, Habitaciones, Clientes, Reservas, Pagos, ServiciosAdicionales, ReservaServicios, FormasPago, PagosDetalle)';
 PRINT 'Índices creados: 9';
 PRINT 'Triggers creados: 3';
 PRINT 'Vistas creadas: 2';

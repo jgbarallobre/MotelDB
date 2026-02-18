@@ -9,6 +9,18 @@ interface MetodoPago {
   nombre: string;
   icono: string;
   color: string;
+  requiereReferencia?: boolean;
+  esDivisa?: boolean;
+  esEfectivo?: boolean;
+}
+
+interface Pago {
+  forma_pago: string;
+  monto: number;
+  monto_bs?: number;
+  es_divisa?: boolean;
+  referencia: string;
+  vuelto: number;
 }
 
 interface CheckinData {
@@ -42,17 +54,18 @@ function PagoContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [checkinData, setCheckinData] = useState<CheckinData | null>(null);
-  const [pagos, setPagos] = useState<{ metodo_pago: string; monto: number; comprobante: string }[]>([]);
+  const [pagos, setPagos] = useState<Pago[]>([]);
   const [montoRecibido, setMontoRecibido] = useState('');
   const [procesando, setProcesando] = useState(false);
 
-  // Métodos de pago disponibles
+  // Métodos de pago disponibles (nuevo sistema)
   const metodosPago: MetodoPago[] = [
-    { id: 'Efectivo', nombre: 'Efectivo', icono: '💵', color: 'from-green-500 to-emerald-600' },
-    { id: 'Tarjeta', nombre: 'Tarjeta', icono: '💳', color: 'from-blue-500 to-cyan-600' },
-    { id: 'Transferencia', nombre: 'Transferencia', icono: '🏦', color: 'from-indigo-500 to-purple-600' },
-    { id: 'Yape', nombre: 'Yape', icono: '📱', color: 'from-pink-500 to-rose-600' },
-    { id: 'Plin', nombre: 'Plin', icono: '🔵', color: 'from-cyan-500 to-blue-600' },
+    { id: 'EFECTIVO_BS', nombre: 'Efectivo BS', icono: '💵', color: 'from-green-500 to-emerald-600', esEfectivo: true, esDivisa: false },
+    { id: 'TARJETA_DEBITO', nombre: 'Tarjeta Débito', icono: '💳', color: 'from-blue-500 to-cyan-600', esEfectivo: false, esDivisa: false },
+    { id: 'TARJETA_CREDITO', nombre: 'Tarjeta Crédito', icono: '💳', color: 'from-purple-500 to-pink-600', esEfectivo: false, esDivisa: false },
+    { id: 'PAGO_MOVIL', nombre: 'Pago Móvil', icono: '📱', color: 'from-pink-500 to-rose-600', requiereReferencia: true },
+    { id: 'TRANSFERENCIA', nombre: 'Transferencia', icono: '🏦', color: 'from-indigo-500 to-purple-600', requiereReferencia: true },
+    { id: 'DIVISAS', nombre: 'Divisas ($)', icono: '💲', color: 'from-amber-500 to-yellow-600', esEfectivo: true, esDivisa: true },
   ];
 
   useEffect(() => {
@@ -71,25 +84,52 @@ function PagoContent() {
   }, []);
 
   const totalAPagar = checkinData?.tipo_estadia?.precio || 0;
+  const tasaCambio = checkinData?.tasaCambio || 1;
   const montoRecibidoNum = parseFloat(montoRecibido) || 0;
   const cambio = Math.max(0, montoRecibidoNum - totalAPagar);
   const deuda = Math.max(0, totalAPagar - montoRecibidoNum);
 
   const toggleMetodoPago = (metodo: string) => {
-    const existente = pagos.findIndex(p => p.metodo_pago === metodo);
+    const existente = pagos.findIndex(p => p.forma_pago === metodo);
     
     if (existente >= 0) {
       // Eliminar
       setPagos(pagos.filter((_, i) => i !== existente));
     } else {
-      // Agregar con monto 0
-      setPagos([...pagos, { metodo_pago: metodo, monto: 0, comprobante: '' }]);
+      // Agregar con monto 0 y valores por defecto
+      const metodoInfo = metodosPago.find(m => m.id === metodo);
+      setPagos([...pagos, { 
+        forma_pago: metodo, 
+        monto: 0, 
+        monto_bs: 0,
+        es_divisa: metodoInfo?.esDivisa || false,
+        referencia: '',
+        vuelto: 0 
+      }]);
     }
   };
 
   const updateMontoPago = (index: number, monto: number) => {
     const nuevosPagos = [...pagos];
     nuevosPagos[index].monto = monto;
+    // Si es divisa, calcular monto_bs
+    if (nuevosPagos[index].es_divisa) {
+      nuevosPagos[index].monto_bs = monto * tasaCambio;
+    } else {
+      nuevosPagos[index].monto_bs = monto;
+    }
+    setPagos(nuevosPagos);
+  };
+
+  const updateReferencia = (index: number, referencia: string) => {
+    const nuevosPagos = [...pagos];
+    nuevosPagos[index].referencia = referencia;
+    setPagos(nuevosPagos);
+  };
+
+  const updateVuelto = (index: number, vuelto: number) => {
+    const nuevosPagos = [...pagos];
+    nuevosPagos[index].vuelto = vuelto;
     setPagos(nuevosPagos);
   };
 
@@ -107,6 +147,15 @@ function PagoContent() {
     if (totalPagado < totalAPagar) {
       alert('El monto total pagado es insuficiente');
       return;
+    }
+
+    // Validar referencias requeridas
+    for (const pago of pagos) {
+      const metodo = metodosPago.find(m => m.id === pago.forma_pago);
+      if (metodo?.requiereReferencia && !pago.referencia) {
+        alert(`Ingrese el número de referencia para ${metodo.nombre}`);
+        return;
+      }
     }
 
     setProcesando(true);
@@ -243,7 +292,7 @@ function PagoContent() {
             </div>
             <div className="flex justify-between pt-2 border-t border-white/10">
               <span className="text-slate-300 font-medium">Total a Pagar:</span>
-              <span className="text-2xl font-bold text-green-400">${totalAPagar.toFixed(2)}</span>
+              <span className="text-2xl font-bold text-green-400">${totalAPagar.toFixed(2)} <span className="text-sm text-slate-400">(Bs. {(totalAPagar * tasaCambio).toFixed(2)})</span></span>
             </div>
           </div>
         </div>
@@ -261,7 +310,7 @@ function PagoContent() {
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
             {metodosPago.map((metodo) => {
-              const seleccionado = pagos.some(p => p.metodo_pago === metodo.id);
+              const seleccionado = pagos.some(p => p.forma_pago === metodo.id);
               return (
                 <button
                   key={metodo.id}
@@ -276,6 +325,9 @@ function PagoContent() {
                   <span className={`font-medium text-sm ${seleccionado ? 'text-white' : 'text-white'}`}>
                     {metodo.nombre}
                   </span>
+                  {metodo.requiereReferencia && (
+                    <span className="text-[10px] text-white/70">*Ref</span>
+                  )}
                 </button>
               );
             })}
@@ -286,20 +338,37 @@ function PagoContent() {
             <div className="space-y-4 pt-4 border-t border-white/10">
               <h3 className="font-medium text-white">Detalle de cada forma de pago:</h3>
               {pagos.map((pago, index) => {
-                const metodo = metodosPago.find(m => m.id === pago.metodo_pago);
+                const metodo = metodosPago.find(m => m.id === pago.forma_pago);
                 return (
-                  <div key={pago.metodo_pago} className="flex items-center gap-4 p-4 bg-white/5 rounded-xl">
+                  <div key={pago.forma_pago} className="flex items-center gap-4 p-4 bg-white/5 rounded-xl">
                     <span className="text-2xl">{metodo?.icono}</span>
                     <span className="text-white font-medium flex-1">{metodo?.nombre}</span>
-                    <input
-                      type="number"
-                      value={pago.monto}
-                      onChange={(e) => updateMontoPago(index, parseFloat(e.target.value) || 0)}
-                      min="0"
-                      step="0.01"
-                      placeholder="Monto"
-                      className="w-32 px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-right"
-                    />
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400 text-sm">{pago.es_divisa ? '$' : 'Bs.'}</span>
+                      <input
+                        type="number"
+                        value={pago.monto}
+                        onChange={(e) => updateMontoPago(index, parseFloat(e.target.value) || 0)}
+                        min="0"
+                        step="0.01"
+                        placeholder="Monto"
+                        className="w-28 px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-right"
+                      />
+                    </div>
+                    {metodo?.requiereReferencia && (
+                      <input
+                        type="text"
+                        value={pago.referencia}
+                        onChange={(e) => updateReferencia(index, e.target.value)}
+                        placeholder="N° Referencia"
+                        className="w-36 px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm"
+                      />
+                    )}
+                    {pago.es_divisa && (
+                      <div className="text-xs text-green-400 w-20 text-right">
+                        Bs. {(pago.monto * tasaCambio).toFixed(0)}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -317,6 +386,12 @@ function PagoContent() {
               </span>
             </div>
             <div className="flex justify-between items-center">
+              <span className="text-slate-300">Total en BS:</span>
+              <span className="text-xl font-bold text-amber-400">
+                Bs. {pagos.reduce((sum, p) => sum + (p.monto_bs || (p.es_divisa ? p.monto * tasaCambio : p.monto)), 0).toFixed(2)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
               <span className="text-slate-300">Total a Pagar:</span>
               <span className="text-xl font-bold text-white">
                 ${totalAPagar.toFixed(2)}
@@ -325,7 +400,7 @@ function PagoContent() {
             <div className="flex justify-between items-center pt-3 border-t border-white/10">
               <span className="text-slate-300">Cambio:</span>
               <span className="text-2xl font-bold text-green-400">
-                ${cambio.toFixed(2)}
+                ${Math.max(0, pagos.reduce((sum, p) => sum + p.monto, 0) - totalAPagar).toFixed(2)}
               </span>
             </div>
             {deuda > 0 && (

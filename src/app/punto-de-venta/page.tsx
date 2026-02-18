@@ -46,10 +46,19 @@ export default function PuntoDeVentaPage() {
   
   // Modal de pago
   const [showModalPago, setShowModalPago] = useState(false);
-  const [metodoPago, setMetodoPago] = useState('efectivo');
+  const [pagos, setPagos] = useState<{ forma_pago: string; monto: number; monto_bs?: number; es_divisa?: boolean; referencia: string; vuelto: number }[]>([]);
+  const [metodoPago, setMetodoPago] = useState('EFECTIVO_BS');
   const [montoRecibido, setMontoRecibido] = useState('');
   const [procesando, setProcesando] = useState(false);
   const [errorPago, setErrorPago] = useState<string | null>(null);
+
+  // Quick pay buttons
+  const metodosQuickPay = [
+    { id: 'EFECTIVO_BS', nombre: 'Efectivo BS', icono: '💵', color: 'from-green-500 to-emerald-600' },
+    { id: 'TARJETA_DEBITO', nombre: 'Tarjeta Débito', icono: '💳', color: 'from-blue-500 to-cyan-600' },
+    { id: 'TRANSFERENCIA', nombre: 'Transferencia', icono: '🏦', color: 'from-indigo-500 to-purple-600' },
+    { id: 'DIVISAS', nombre: 'Divisas', icono: '💲', color: 'from-amber-500 to-yellow-600' },
+  ];
   
   // Modal de éxito
   const [showModalExito, setShowModalExito] = useState(false);
@@ -230,9 +239,28 @@ export default function PuntoDeVentaPage() {
   const handlePago = async () => {
     setErrorPago(null);
     const totalBS = calcularTotalBS();
-    const recibido = parseFloat(montoRecibido) || 0;
+    const total$ = calcularTotal();
     
-    if (recibido < totalBS) {
+    // Usar el array de pagos si está definido, si no crear uno por defecto
+    let pagosArray = pagos;
+    
+    if (pagosArray.length === 0) {
+      // Si no hay pagos definidos, crear uno por defecto con el método seleccionado
+      pagosArray = [{
+        forma_pago: metodoPago,
+        monto: metodoPago === 'DIVISAS' ? total$ : totalBS,
+        monto_bs: metodoPago === 'DIVISAS' ? total$ * tasaCambio : totalBS,
+        es_divisa: metodoPago === 'DIVISAS',
+        referencia: '',
+        vuelto: 0
+      }];
+    }
+    
+    // Calcular total recibido
+    const totalRecibido = pagosArray.reduce((sum, p) => sum + p.monto, 0);
+    const totalRecibidoBS = pagosArray.reduce((sum, p) => sum + (p.monto_bs || p.monto * tasaCambio), 0);
+    
+    if (totalRecibido < total$ && totalRecibidoBS < totalBS) {
       setErrorPago('El monto recibido es menor al total');
       return;
     }
@@ -250,9 +278,10 @@ export default function PuntoDeVentaPage() {
             precioUnitario: item.precioUnitario,
             ivaPorcentaje: item.iva_porcentaje
           })),
-          metodoPago,
-          montoRecibidoUSD: calcularTotal(),
-          montoRecibidoBS: totalBS,
+          pagos: pagosArray,
+          metodoPago: 'MULTIPLE',
+          montoRecibidoUSD: totalRecibido,
+          montoRecibidoBS: totalRecibidoBS,
           tasaCambio,
           usuarioId: jornadaActiva.usuario_id
         })
@@ -269,6 +298,7 @@ export default function PuntoDeVentaPage() {
       setShowQuickPay(false);
       setShowModalExito(true);
       setCarrito([]);
+      setPagos([]);
       setMontoRecibido('');
       
       // Refresh articles to update inventory
@@ -282,8 +312,30 @@ export default function PuntoDeVentaPage() {
   };
 
   const handleQuickPay = (metodo: string) => {
-    setMetodoPago(metodo);
-    setMontoRecibido(calcularTotalBS().toString());
+    const totalBS = calcularTotalBS();
+    const total$ = calcularTotal();
+    
+    // Agregar método de pago rápido
+    const nuevoPago = {
+      forma_pago: metodo,
+      monto: metodo === 'DIVISAS' ? total$ : totalBS,
+      monto_bs: metodo === 'DIVISAS' ? total$ * tasaCambio : totalBS,
+      es_divisa: metodo === 'DIVISAS',
+      referencia: '',
+      vuelto: 0
+    };
+    
+    // Verificar si ya existe este método de pago
+    const existente = pagos.findIndex(p => p.forma_pago === metodo);
+    if (existente >= 0) {
+      // Actualizar monto
+      const nuevosPagos = [...pagos];
+      nuevosPagos[existente] = nuevoPago;
+      setPagos(nuevosPagos);
+    } else {
+      setPagos([...pagos, nuevoPago]);
+    }
+    
     setShowQuickPay(true);
   };
 
